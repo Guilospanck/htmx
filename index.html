@@ -5,10 +5,17 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Learning HTMX</title>
   <script src="./htmx.min.js"></script>
+  <script src="https://unpkg.com/htmx-ext-ws@2.0.0/ws.js"></script>
+  <!-- <meta name="htmx-config" content='{"defaultSwapStyle":"outerHTML"}'> -->
 </head>
 <body>
     <button hx-get="http://localhost:4444/ping" hx-trigger="click" hx-swap="outerHTML">
       Click me
     </button>
+
+    
+  <div hx-ext="ws" ws-connect="ws://localhost:4444/ws">
+      <div id="game"></div>
+  </div>
 </body>
 </html>

@@ -1,33 +1,48 @@
 package main
 
 import (
+	"fmt"
 	"net/http"
 
+	"github.com/gorilla/websocket"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
-	"golang.org/x/net/websocket"
+)
+
+var (
+	upgrader = websocket.Upgrader{}
 )
 
 // To test via CLI: wscat -H "Origin: http://localhost:4444" -c ws://localhost:4444/ws
 func ws(c echo.Context) error {
 	response := `
-	<div>
-	<p style="background: red; width: 10px; height: 10px"></p>
-	<p style="background: black; width: 10px; height: 10px"></p>
-	<p style="background: red; width: 10px; height: 10px"></p>
+	<div id="game" hx-swap-oob="innerHTML">
+		<p style="background: red; width: 10px; height: 10px"></p>
+		<p style="background: black; width: 10px; height: 10px"></p>
+		<p style="background: red; width: 10px; height: 10px"></p>
 	</div>
 	`
-	websocket.Handler(func(ws_connection *websocket.Conn) {
-		defer ws_connection.Close()
-		for {
-			// Write
-			err := websocket.Message.Send(ws_connection, response)
-			if err != nil {
-				c.Logger().Error(err)
-			}
+
+	ws, err := upgrader.Upgrade(c.Response(), c.Request(), nil)
+	if err != nil {
+		return err
+	}
+	defer ws.Close()
+
+	for {
+		// Write
+		err := ws.WriteMessage(websocket.TextMessage, []byte(response))
+		if err != nil {
+			c.Logger().Error(err)
 		}
-	}).ServeHTTP(c.Response(), c.Request())
-	return nil
+
+		// Read
+		_, msg, err := ws.ReadMessage()
+		if err != nil {
+			c.Logger().Error(err)
+		}
+		fmt.Printf("%s\n", msg)
+	}
 }
 
 func main() {
