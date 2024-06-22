@@ -21,17 +21,21 @@ func ws(c echo.Context, start, stop chan int) error {
 		return err
 	}
 	defer ws.Close()
-	c.Logger().Info("\n> CONNECTED to ws \n")
 
-	response := `<div id="game" hx-swap-oob="innerhtml">
-	<p style="background: red; width: 10px; height: 10px"></p>
-	<p style="background: black; width: 10px; height: 10px"></p>
-	<p style="background: red; width: 10px; height: 10px"></p>
+	reset := `
+	<div id="game" style="display: flex; flex-direction: row;" hx-swap-oob="innerhtml">
+	<p id="cell-1" style="background: black; width: 10px; height: 10px"></p>
+	<p id="cell-2" style="background: green; width: 10px; height: 10px"></p>
+	<p id="cell-3" style="background: black; width: 10px; height: 10px"></p>
+	<p id="cell-4" style="background: green; width: 10px; height: 10px"></p>
+	<p id="cell-5" style="background: black; width: 10px; height: 10px"></p>
 	</div>
 	`
 
-	reset := `<div id="game" hx-swap-oob="innerhtml">
-	</div>
+	response := `
+	<p id="cell-1" style="background: red; width: 10px; height: 10px"></p>
+	<p id="cell-3" style="background: red; width: 10px; height: 10px"></p>
+	<p id="cell-5" style="background: red; width: 10px; height: 10px"></p>
 	`
 
 	for {
@@ -48,7 +52,6 @@ func ws(c echo.Context, start, stop chan int) error {
 			if err != nil {
 				c.Logger().Error(err)
 			}
-			break
 		}
 	}
 
