@@ -14,14 +14,7 @@ var (
 )
 
 // To test via CLI: wscat -H "Origin: http://localhost:4444" -c ws://localhost:4444/ws
-func ws(c echo.Context) error {
-	response := `
-	<div id="game" hx-swap-oob="innerHTML">
-		<p style="background: red; width: 10px; height: 10px"></p>
-		<p style="background: black; width: 10px; height: 10px"></p>
-		<p style="background: red; width: 10px; height: 10px"></p>
-	</div>
-	`
+func ws(c echo.Context, channel chan string) error {
 	upgrader.CheckOrigin = func(r *http.Request) bool { return true }
 	ws, err := upgrader.Upgrade(c.Response(), c.Request(), nil)
 	if err != nil {
@@ -29,20 +22,15 @@ func ws(c echo.Context) error {
 	}
 	defer ws.Close()
 
-	for {
+	for response := range channel {
 		// Write
 		err := ws.WriteMessage(websocket.TextMessage, []byte(response))
 		if err != nil {
 			c.Logger().Error(err)
 		}
-
-		// Read
-		_, msg, err := ws.ReadMessage()
-		if err != nil {
-			c.Logger().Error(err)
-		}
-		fmt.Printf("%s\n", msg)
 	}
+
+	return nil
 }
 
 func main() {
@@ -53,12 +41,25 @@ func main() {
 	e.Use(middleware.Recover())
 	e.Use(middleware.CORS())
 
+	my_channel := make(chan string)
+
 	e.GET("/ping", func(c echo.Context) error {
-		response := "<p>I AM TESTING</p>"
-		return c.String(http.StatusOK, response)
+
+		response := `
+		<div id="game" hx-swap-oob="innerHTML">
+		<p style="background: red; width: 10px; height: 10px"></p>
+		<p style="background: black; width: 10px; height: 10px"></p>
+		<p style="background: red; width: 10px; height: 10px"></p>
+		</div>
+		`
+
+		my_channel <- response
+		return c.NoContent(http.StatusNoContent)
 	})
 
-	e.GET("/ws", ws)
+	e.GET("/ws", func(c echo.Context) error {
+		return ws(c, my_channel)
+	})
 
 	e.Logger.Fatal(e.Start(":4444"))
 }
