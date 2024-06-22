@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math/rand"
 	"net/http"
+	"sync"
 	"time"
 
 	"github.com/gorilla/websocket"
@@ -18,6 +19,7 @@ const GAME_BOARD_SIZE = BOARD_COLUMNS * BOARD_COLUMNS
 var (
 	upgrader         = websocket.Upgrader{}
 	currentGameState = make([]int, 0, GAME_BOARD_SIZE)
+	mu               sync.Mutex
 )
 
 func getColorBasedOnCellAliveOrDead(state int) string {
@@ -44,6 +46,9 @@ func drawBoard() string {
 }
 
 func resetBoardGame() string {
+	mu.Lock()
+	defer mu.Unlock()
+	currentGameState = getInitialGameState()
 	return drawBoard()
 }
 
@@ -76,15 +81,15 @@ func getBlinker() []int {
 	return state
 }
 
-func getNumberOfAliveNeighbours(index int) int {
-	topIndex := index - BOARD_COLUMNS
-	bottomIndex := index + BOARD_COLUMNS
-	rightIndex := index + 1
-	leftIndex := index - 1
-	topRightIndex := index - BOARD_COLUMNS + 1
-	topLeftIndex := index - BOARD_COLUMNS - 1
-	bottomRightIndex := index + BOARD_COLUMNS + 1
-	bottomLeftIndex := index + BOARD_COLUMNS - 1
+func getNumberOfAliveNeighbours(cellIndex int) int {
+	topIndex := cellIndex - BOARD_COLUMNS
+	bottomIndex := cellIndex + BOARD_COLUMNS
+	rightIndex := cellIndex + 1
+	leftIndex := cellIndex - 1
+	topRightIndex := cellIndex - BOARD_COLUMNS + 1
+	topLeftIndex := cellIndex - BOARD_COLUMNS - 1
+	bottomRightIndex := cellIndex + BOARD_COLUMNS + 1
+	bottomLeftIndex := cellIndex + BOARD_COLUMNS - 1
 
 	neighbours := []int{topIndex, bottomIndex, rightIndex, leftIndex, topRightIndex, topLeftIndex, bottomLeftIndex, bottomRightIndex}
 
@@ -120,15 +125,24 @@ func getCellStateBasedOnNeighbours(cellIndex int) int {
 }
 
 func updateCurrentGameState() {
+	mu.Lock()
+	defer mu.Unlock()
 	for index := range currentGameState {
 		currentGameState[index] = getCellStateBasedOnNeighbours(index)
 	}
 }
 
-func runConwaysRulesAndReturnState(quit chan int, newData chan string) {
+func setInitialState() {
+	mu.Lock()
+	defer mu.Unlock()
+	initialState := getBlinker()
+	currentGameState = initialState
+}
+
+func runConwaysRulesAndReturnState(stop chan int, newData chan string) {
 	for {
 		select {
-		case <-quit:
+		case <-stop:
 			// break only breaks from the innermost loop (in this case would be select)
 			// return breaks from all
 			return
@@ -142,9 +156,6 @@ func runConwaysRulesAndReturnState(quit chan int, newData chan string) {
 
 // To test via CLI: wscat -H "Origin: http://localhost:4444" -c ws://localhost:4444/ws
 func ws(c echo.Context, start, stop chan int, newData chan string) error {
-	initialState := getBlinker()
-	currentGameState = initialState
-
 	upgrader.CheckOrigin = func(r *http.Request) bool { return true }
 	ws, err := upgrader.Upgrade(c.Response(), c.Request(), nil)
 	if err != nil {
@@ -155,12 +166,6 @@ func ws(c echo.Context, start, stop chan int, newData chan string) error {
 	// defers are executed in LIFO fashion
 	defer ws.Close()
 	defer c.Logger().Info("CLOSING....")
-
-	reset := fmt.Sprintf(`
-	<div id="game" hx-swap-oob="innerhtml">
-		%s
-	</div>
-	`, resetBoardGame())
 
 	for {
 		select {
@@ -180,8 +185,15 @@ func ws(c echo.Context, start, stop chan int, newData chan string) error {
 				c.Logger().Error(err)
 			}
 		case <-start:
+			setInitialState()
 			go runConwaysRulesAndReturnState(stop, newData)
 		case <-stop:
+			reset := fmt.Sprintf(`
+				<div id="game" hx-swap-oob="innerhtml">
+				%s
+				</div>
+				`, resetBoardGame())
+
 			// Write
 			err := ws.WriteMessage(websocket.TextMessage, []byte(reset))
 			if err != nil {
