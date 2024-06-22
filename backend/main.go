@@ -22,7 +22,7 @@ func ws(c echo.Context) error {
 		<p style="background: red; width: 10px; height: 10px"></p>
 	</div>
 	`
-
+	upgrader.CheckOrigin = func(r *http.Request) bool { return true }
 	ws, err := upgrader.Upgrade(c.Response(), c.Request(), nil)
 	if err != nil {
 		return err
