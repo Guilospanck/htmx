@@ -8,7 +8,7 @@
     <script src="https://unpkg.com/htmx-ext-ws@2.0.0/ws.js"></script>
     <!-- <meta name="htmx-config" content='{"defaultSwapStyle":"outerHTML"}'> -->
   </head>
-  <body>
+  <body style="background: red">
     <button hx-get="http://localhost:4444/start" hx-trigger="click">
       Start
     </button>
@@ -23,33 +23,7 @@
           grid-template-columns: repeat(20, 15px);
           grid-template-rows: repeat(20, 15px);
         "
-      >
-        <p
-          id="cell-1"
-          style="background: black; width: 15px; height: 15px"
-          class="grid-item"
-        ></p>
-        <p
-          id="cell-2"
-          style="background: green; width: 15px; height: 15px"
-          class="grid-item"
-        ></p>
-        <p
-          id="cell-3"
-          style="background: black; width: 15px; height: 15px"
-          class="grid-item"
-        ></p>
-        <p
-          id="cell-4"
-          style="background: green; width: 15px; height: 15px"
-          class="grid-item"
-        ></p>
-        <p
-          id="cell-5"
-          style="background: black; width: 15px; height: 15px"
-          class="grid-item"
-        ></p>
-      </div>
+      ></div>
     </div>
   </body>
 </html>
