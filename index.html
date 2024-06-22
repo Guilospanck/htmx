@@ -1,29 +1,55 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Learning HTMX</title>
-  <script src="./htmx.min.js"></script>
-  <script src="https://unpkg.com/htmx-ext-ws@2.0.0/ws.js"></script>
-  <!-- <meta name="htmx-config" content='{"defaultSwapStyle":"outerHTML"}'> -->
-</head>
-<body>
-    <button hx-get="http://localhost:4444/start" hx-trigger="click" hx-swap="outerHTML">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Learning HTMX</title>
+    <script src="./htmx.min.js"></script>
+    <script src="https://unpkg.com/htmx-ext-ws@2.0.0/ws.js"></script>
+    <!-- <meta name="htmx-config" content='{"defaultSwapStyle":"outerHTML"}'> -->
+  </head>
+  <body>
+    <button hx-get="http://localhost:4444/start" hx-trigger="click">
       Start
     </button>
-    <button hx-get="http://localhost:4444/stop" hx-trigger="click" hx-swap="outerHTML">
-      Stop
-    </button>
-    
-  <div hx-ext="ws" ws-connect="ws://localhost:4444/ws">
-      <div id="game" style="display: flex; flex-direction: row;">
-        <p id="cell-1" style="background: black; width: 10px; height: 10px"></p>
-        <p id="cell-2" style="background: green; width: 10px; height: 10px"></p>
-        <p id="cell-3" style="background: black; width: 10px; height: 10px"></p>
-        <p id="cell-4" style="background: green; width: 10px; height: 10px"></p>
-        <p id="cell-5" style="background: black; width: 10px; height: 10px"></p>
+    <button hx-get="http://localhost:4444/stop" hx-trigger="click">Stop</button>
+
+    <div hx-ext="ws" ws-connect="ws://localhost:4444/ws">
+      <div
+        id="game"
+        style="
+          display: grid;
+          gap: 2px;
+          grid-template-columns: repeat(20, 15px);
+          grid-template-rows: repeat(20, 15px);
+        "
+      >
+        <p
+          id="cell-1"
+          style="background: black; width: 15px; height: 15px"
+          class="grid-item"
+        ></p>
+        <p
+          id="cell-2"
+          style="background: green; width: 15px; height: 15px"
+          class="grid-item"
+        ></p>
+        <p
+          id="cell-3"
+          style="background: black; width: 15px; height: 15px"
+          class="grid-item"
+        ></p>
+        <p
+          id="cell-4"
+          style="background: green; width: 15px; height: 15px"
+          class="grid-item"
+        ></p>
+        <p
+          id="cell-5"
+          style="background: black; width: 15px; height: 15px"
+          class="grid-item"
+        ></p>
       </div>
-  </div>
-</body>
+    </div>
+  </body>
 </html>
