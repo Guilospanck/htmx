@@ -76,7 +76,7 @@ func getBlinker() []int {
 	return state
 }
 
-func getNumberOfAliveNeighbors(index int) int {
+func getNumberOfAliveNeighbours(index int) int {
 	topIndex := index - BOARD_COLUMNS
 	bottomIndex := index + BOARD_COLUMNS
 	rightIndex := index + 1
@@ -90,7 +90,7 @@ func getNumberOfAliveNeighbors(index int) int {
 
 	aliveNeighbours := 0
 	for _, value := range neighbours {
-		if value < 0 || value > GAME_BOARD_SIZE-1 {
+		if value < 0 || value >= GAME_BOARD_SIZE {
 			continue
 		}
 
@@ -102,7 +102,7 @@ func getNumberOfAliveNeighbors(index int) int {
 }
 
 func getCellStateBasedOnNeighbours(cellIndex int) int {
-	aliveNeighbours := getNumberOfAliveNeighbors(cellIndex)
+	aliveNeighbours := getNumberOfAliveNeighbours(cellIndex)
 	currentStateOfCell := currentGameState[cellIndex]
 
 	switch currentStateOfCell {
@@ -129,11 +129,13 @@ func runConwaysRulesAndReturnState(quit chan int, newData chan string) {
 	for {
 		select {
 		case <-quit:
-			break
+			// break only breaks from the innermost loop (in this case would be select)
+			// return breaks from all
+			return
 		default:
 			updateCurrentGameState()
 			newData <- drawBoard()
-			time.Sleep(2 * time.Second)
+			time.Sleep(1 * time.Second)
 		}
 	}
 }
@@ -163,6 +165,15 @@ func ws(c echo.Context, start, stop chan int, newData chan string) error {
 	for {
 		select {
 		case <-newData:
+			howManyAlive := 0
+			for _, value := range currentGameState {
+				if value == 1 {
+					howManyAlive += 1
+				}
+			}
+			c.Logger().Info(currentGameState)
+			c.Logger().Info(howManyAlive)
+
 			// Write
 			err := ws.WriteMessage(websocket.TextMessage, []byte(<-newData))
 			if err != nil {
