@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/gorilla/websocket"
@@ -14,23 +13,45 @@ var (
 )
 
 // To test via CLI: wscat -H "Origin: http://localhost:4444" -c ws://localhost:4444/ws
-func ws(c echo.Context, channel chan string) error {
+func ws(c echo.Context, start, stop chan int) error {
 	upgrader.CheckOrigin = func(r *http.Request) bool { return true }
 	ws, err := upgrader.Upgrade(c.Response(), c.Request(), nil)
 	if err != nil {
+		c.Logger().Error(err)
 		return err
 	}
 	defer ws.Close()
+	c.Logger().Info("\n> CONNECTED to ws \n")
 
-	for response := range channel {
-		// Write
-		err := ws.WriteMessage(websocket.TextMessage, []byte(response))
-		if err != nil {
-			c.Logger().Error(err)
+	response := `<div id="game" hx-swap-oob="innerhtml">
+	<p style="background: red; width: 10px; height: 10px"></p>
+	<p style="background: black; width: 10px; height: 10px"></p>
+	<p style="background: red; width: 10px; height: 10px"></p>
+	</div>
+	`
+
+	reset := `<div id="game" hx-swap-oob="innerhtml">
+	</div>
+	`
+
+	for {
+		select {
+		case <-start:
+			// Write
+			err := ws.WriteMessage(websocket.TextMessage, []byte(response))
+			if err != nil {
+				c.Logger().Error(err)
+			}
+		case <-stop:
+			// Write
+			err := ws.WriteMessage(websocket.TextMessage, []byte(reset))
+			if err != nil {
+				c.Logger().Error(err)
+			}
+			break
 		}
 	}
 
-	return nil
 }
 
 func main() {
@@ -41,24 +62,20 @@ func main() {
 	e.Use(middleware.Recover())
 	e.Use(middleware.CORS())
 
-	my_channel := make(chan string)
+	start := make(chan int)
+	stop := make(chan int)
 
-	e.GET("/ping", func(c echo.Context) error {
-
-		response := `
-		<div id="game" hx-swap-oob="innerHTML">
-		<p style="background: red; width: 10px; height: 10px"></p>
-		<p style="background: black; width: 10px; height: 10px"></p>
-		<p style="background: red; width: 10px; height: 10px"></p>
-		</div>
-		`
-
-		my_channel <- response
+	e.GET("/start", func(c echo.Context) error {
+		start <- 1
+		return c.NoContent(http.StatusNoContent)
+	})
+	e.GET("/stop", func(c echo.Context) error {
+		stop <- 1
 		return c.NoContent(http.StatusNoContent)
 	})
 
 	e.GET("/ws", func(c echo.Context) error {
-		return ws(c, my_channel)
+		return ws(c, start, stop)
 	})
 
 	e.Logger.Fatal(e.Start(":4444"))
