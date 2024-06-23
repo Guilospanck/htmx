@@ -17,9 +17,9 @@ const BOARD_COLUMNS = 20
 const GAME_BOARD_SIZE = BOARD_COLUMNS * BOARD_COLUMNS
 
 var (
-	upgrader         = websocket.Upgrader{}
-	currentGameState = make([]int, 0, GAME_BOARD_SIZE)
-	mu               sync.Mutex
+	upgrader            = websocket.Upgrader{}
+	mutCurrentGameState = make([]int, 0, GAME_BOARD_SIZE)
+	mu                  sync.Mutex
 )
 
 func getColorBasedOnCellAliveOrDead(state int) string {
@@ -32,7 +32,7 @@ func getColorBasedOnCellAliveOrDead(state int) string {
 
 func drawBoard() string {
 	paragraphs := ""
-	for idx, value := range currentGameState {
+	for idx, value := range mutCurrentGameState {
 		paragraphs += fmt.Sprintf(`<p id="cell-%d" style="background: %s; width: 15px; height: 15px" class="grid-item"></p>`, idx, getColorBasedOnCellAliveOrDead(value))
 	}
 
@@ -83,11 +83,11 @@ func getBlinker() []int {
 }
 
 func resetBoardGame() string {
-	currentGameState = getInitialGameState()
+	mutCurrentGameState = getInitialGameState()
 	return drawBoard()
 }
 
-func getNumberOfAliveNeighbours(cellIndex int) int {
+func getNumberOfAliveNeighbours(cellIndex int, readOnlyCurrentState []int) int {
 	topIndex := cellIndex - BOARD_COLUMNS
 	bottomIndex := cellIndex + BOARD_COLUMNS
 	rightIndex := cellIndex + 1
@@ -105,16 +105,16 @@ func getNumberOfAliveNeighbours(cellIndex int) int {
 			continue
 		}
 
-		neighbour := currentGameState[value]
+		neighbour := readOnlyCurrentState[value]
 		aliveNeighbours += neighbour
 	}
 
 	return aliveNeighbours
 }
 
-func getCellStateBasedOnNeighbours(cellIndex int) int {
-	aliveNeighbours := getNumberOfAliveNeighbours(cellIndex)
-	currentStateOfCell := currentGameState[cellIndex]
+func getCellStateBasedOnNeighbours(cellIndex int, readOnlyCurrentState []int) int {
+	aliveNeighbours := getNumberOfAliveNeighbours(cellIndex, readOnlyCurrentState)
+	currentStateOfCell := readOnlyCurrentState[cellIndex]
 
 	switch currentStateOfCell {
 	case 1:
@@ -131,20 +131,25 @@ func getCellStateBasedOnNeighbours(cellIndex int) int {
 }
 
 func updateCurrentGameState() {
-	for index := range currentGameState {
-		currentGameState[index] = getCellStateBasedOnNeighbours(index)
+	readOnlyCurrentState := make([]int, len(mutCurrentGameState))
+	copy(readOnlyCurrentState, mutCurrentGameState)
+
+	for index := range readOnlyCurrentState {
+		mutCurrentGameState[index] = getCellStateBasedOnNeighbours(index, readOnlyCurrentState)
 	}
 }
 
 func setInitialState() {
 	initialState := getBlinker()
-	currentGameState = initialState
+	mutCurrentGameState = initialState
 }
 
 func runConwaysRulesAndReturnState(stop chan int, newData chan string) {
 	mu.Lock()
 	setInitialState()
 	mu.Unlock()
+
+	newData <- drawBoard()
 
 	for {
 		select {
@@ -180,15 +185,6 @@ func ws(c echo.Context, start, stop, reset chan int, newData chan string) error 
 	for {
 		select {
 		case <-newData:
-			howManyAlive := 0
-			for _, value := range currentGameState {
-				if value == 1 {
-					howManyAlive += 1
-				}
-			}
-			c.Logger().Info(currentGameState)
-			c.Logger().Info(howManyAlive)
-
 			// Write
 			err := ws.WriteMessage(websocket.TextMessage, []byte(<-newData))
 			if err != nil {
