@@ -37,7 +37,15 @@ func drawBoard() string {
 	}
 
 	response := fmt.Sprintf(`
-	<div id="game" hx-swap-oob="innerhtml">
+	<div id="game"
+		hx-swap-oob="innerhtml"
+		style="
+			display: grid;
+			gap: 2px;
+			grid-template-columns: repeat(20, 15px);
+			grid-template-rows: repeat(20, 15px);
+		"
+	>
 		%s
 	</div>
 	`, paragraphs)
@@ -155,7 +163,7 @@ func runConwaysRulesAndReturnState(stop chan int, newData chan string) {
 }
 
 // To test via CLI: wscat -H "Origin: http://localhost:4444" -c ws://localhost:4444/ws
-func ws(c echo.Context, start, stop chan int, newData chan string) error {
+func ws(c echo.Context, start, stop, reset chan int, newData chan string) error {
 	upgrader.CheckOrigin = func(r *http.Request) bool { return true }
 	ws, err := upgrader.Upgrade(c.Response(), c.Request(), nil)
 	if err != nil {
@@ -187,12 +195,9 @@ func ws(c echo.Context, start, stop chan int, newData chan string) error {
 		case <-start:
 			setInitialState()
 			go runConwaysRulesAndReturnState(stop, newData)
-		case <-stop:
-			reset := fmt.Sprintf(`
-				<div id="game" hx-swap-oob="innerhtml">
-				%s
-				</div>
-				`, resetBoardGame())
+		case <-reset:
+			stop <- 1
+			reset := resetBoardGame()
 
 			// Write
 			err := ws.WriteMessage(websocket.TextMessage, []byte(reset))
@@ -216,6 +221,7 @@ func main() {
 
 	start := make(chan int)
 	stop := make(chan int)
+	reset := make(chan int)
 	newData := make(chan string)
 
 	e.GET("/start", func(c echo.Context) error {
@@ -226,9 +232,13 @@ func main() {
 		stop <- 1
 		return c.NoContent(http.StatusNoContent)
 	})
+	e.GET("/reset", func(c echo.Context) error {
+		reset <- 1
+		return c.NoContent(http.StatusNoContent)
+	})
 
 	e.GET("/ws", func(c echo.Context) error {
-		return ws(c, start, stop, newData)
+		return ws(c, start, stop, reset, newData)
 	})
 
 	e.Logger.Fatal(e.Start(":4444"))

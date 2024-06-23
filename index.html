@@ -13,6 +13,9 @@
       Start
     </button>
     <button hx-get="http://localhost:4444/stop" hx-trigger="click">Stop</button>
+    <button hx-get="http://localhost:4444/reset" hx-trigger="click">
+      Reset
+    </button>
 
     <div hx-ext="ws" ws-connect="ws://localhost:4444/ws">
       <div
