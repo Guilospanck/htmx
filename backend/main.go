@@ -30,9 +30,9 @@ func getColorBasedOnCellAliveOrDead(state int) string {
 	}
 }
 
-func drawBoard() string {
+func drawBoard(gameState []int) string {
 	paragraphs := ""
-	for idx, value := range mutCurrentGameState {
+	for idx, value := range gameState {
 		paragraphs += fmt.Sprintf(`<p id="cell-%d" style="background: %s; width: 15px; height: 15px" class="grid-item"></p>`, idx, getColorBasedOnCellAliveOrDead(value))
 	}
 
@@ -83,8 +83,8 @@ func getBlinker() []int {
 }
 
 func resetBoardGame() string {
-	mutCurrentGameState = getInitialGameState()
-	return drawBoard()
+	initialState := getInitialGameState()
+	return drawBoard(initialState)
 }
 
 func getNumberOfAliveNeighbours(cellIndex int, readOnlyCurrentState []int) int {
@@ -131,25 +131,34 @@ func getCellStateBasedOnNeighbours(cellIndex int, readOnlyCurrentState []int) in
 }
 
 func updateCurrentGameState() {
+	readOnlyCurrentState := getCurrentStateData()
+	mutableCopy := getCurrentStateData()
+
+	for index := range readOnlyCurrentState {
+		mutableCopy[index] = getCellStateBasedOnNeighbours(index, readOnlyCurrentState)
+	}
+
+	setGameData(mutableCopy)
+}
+
+func setGameData(state []int) {
+	copy(mutCurrentGameState, state)
+}
+
+func getCurrentStateData() []int {
 	readOnlyCurrentState := make([]int, len(mutCurrentGameState))
 	copy(readOnlyCurrentState, mutCurrentGameState)
 
-	for index := range readOnlyCurrentState {
-		mutCurrentGameState[index] = getCellStateBasedOnNeighbours(index, readOnlyCurrentState)
-	}
-}
-
-func setInitialState() {
-	initialState := getBlinker()
-	mutCurrentGameState = initialState
+	return readOnlyCurrentState
 }
 
 func runConwaysRulesAndReturnState(stop chan int, newData chan string) {
 	mu.Lock()
-	setInitialState()
+	initialState := getBlinker()
+	setGameData(initialState)
 	mu.Unlock()
 
-	newData <- drawBoard()
+	newData <- drawBoard(initialState)
 
 	for {
 		select {
@@ -160,7 +169,8 @@ func runConwaysRulesAndReturnState(stop chan int, newData chan string) {
 		default:
 			mu.Lock()
 			updateCurrentGameState()
-			updatedData := drawBoard()
+			currentGameState := getCurrentStateData()
+			updatedData := drawBoard(currentGameState)
 			mu.Unlock()
 
 			newData <- updatedData
@@ -191,6 +201,8 @@ func ws(c echo.Context, start, stop, reset chan int, newData chan string) error 
 				c.Logger().Error(err)
 			}
 		case <-start:
+			initialGameState := getInitialGameState()
+			setGameData(initialGameState)
 			go runConwaysRulesAndReturnState(stop, newData)
 		case <-reset:
 			stop <- 1

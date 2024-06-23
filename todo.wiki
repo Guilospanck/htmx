@@ -1,2 +1,2 @@
-- [ ] The reset does not work after a `stop`
+- [x] The reset does not work after a `stop`
 - [ ] It is using the cell state from the previous rendered state
