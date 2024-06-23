@@ -53,13 +53,6 @@ func drawBoard() string {
 	return response
 }
 
-func resetBoardGame() string {
-	mu.Lock()
-	defer mu.Unlock()
-	currentGameState = getInitialGameState()
-	return drawBoard()
-}
-
 func getInitialGameState() []int {
 	state := make([]int, 0, GAME_BOARD_SIZE)
 
@@ -82,11 +75,16 @@ func getRandomGameState() []int {
 func getBlinker() []int {
 	state := getInitialGameState()
 
-	state[201] = 1
-	state[202] = 1
-	state[203] = 1
+	state[208] = 1
+	state[209] = 1
+	state[210] = 1
 
 	return state
+}
+
+func resetBoardGame() string {
+	currentGameState = getInitialGameState()
+	return drawBoard()
 }
 
 func getNumberOfAliveNeighbours(cellIndex int) int {
@@ -133,21 +131,21 @@ func getCellStateBasedOnNeighbours(cellIndex int) int {
 }
 
 func updateCurrentGameState() {
-	mu.Lock()
-	defer mu.Unlock()
 	for index := range currentGameState {
 		currentGameState[index] = getCellStateBasedOnNeighbours(index)
 	}
 }
 
 func setInitialState() {
-	mu.Lock()
-	defer mu.Unlock()
 	initialState := getBlinker()
 	currentGameState = initialState
 }
 
 func runConwaysRulesAndReturnState(stop chan int, newData chan string) {
+	mu.Lock()
+	setInitialState()
+	mu.Unlock()
+
 	for {
 		select {
 		case <-stop:
@@ -155,8 +153,12 @@ func runConwaysRulesAndReturnState(stop chan int, newData chan string) {
 			// return breaks from all
 			return
 		default:
+			mu.Lock()
 			updateCurrentGameState()
-			newData <- drawBoard()
+			updatedData := drawBoard()
+			mu.Unlock()
+
+			newData <- updatedData
 			time.Sleep(1 * time.Second)
 		}
 	}
@@ -193,11 +195,12 @@ func ws(c echo.Context, start, stop, reset chan int, newData chan string) error 
 				c.Logger().Error(err)
 			}
 		case <-start:
-			setInitialState()
 			go runConwaysRulesAndReturnState(stop, newData)
 		case <-reset:
 			stop <- 1
+			mu.Lock()
 			reset := resetBoardGame()
+			mu.Unlock()
 
 			// Write
 			err := ws.WriteMessage(websocket.TextMessage, []byte(reset))
