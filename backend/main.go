@@ -33,19 +33,11 @@ func getColorBasedOnCellAliveOrDead(state int) string {
 func drawBoard(gameState []int) string {
 	paragraphs := ""
 	for idx, value := range gameState {
-		paragraphs += fmt.Sprintf(`<p id="cell-%d" style="background: %s; width: 15px; height: 15px" class="grid-item"></p>`, idx, getColorBasedOnCellAliveOrDead(value))
+		paragraphs += fmt.Sprintf(`<div id="cell-%d" style="background: %s; width: 15px; height: 15px" class="grid-item"></div>`, idx, getColorBasedOnCellAliveOrDead(value))
 	}
 
 	response := fmt.Sprintf(`
-	<div id="game"
-		hx-swap-oob="innerhtml"
-		style="
-			display: grid;
-			gap: 2px;
-			grid-template-columns: repeat(20, 15px);
-			grid-template-rows: repeat(20, 15px);
-		"
-	>
+	<div id="game" hx-swap-oob="innerhtml">
 		%s
 	</div>
 	`, paragraphs)
@@ -82,9 +74,27 @@ func getBlinker() []int {
 	return state
 }
 
-func resetBoardGame() string {
-	initialState := getInitialGameState()
-	return drawBoard(initialState)
+func getGlider() []int {
+	state := getInitialGameState()
+
+	state[170] = 1
+	state[190] = 1
+	state[210] = 1
+	state[209] = 1
+	state[188] = 1
+
+	return state
+}
+
+func resetBoard(c echo.Context, ws *websocket.Conn) {
+	initialState := getGlider()
+	setGameData(initialState)
+	initialBoard := drawBoard(initialState)
+
+	err := ws.WriteMessage(websocket.TextMessage, []byte(initialBoard))
+	if err != nil {
+		c.Logger().Error(err)
+	}
 }
 
 func getNumberOfAliveNeighbours(cellIndex int, readOnlyCurrentState []int) int {
@@ -156,11 +166,6 @@ func updateCurrentGameState() {
 }
 
 func runConwaysRulesAndReturnState(stop chan int, newData chan string) {
-	initialState := getBlinker()
-	setGameData(initialState)
-
-	newData <- drawBoard(initialState)
-
 	for {
 		select {
 		case <-stop:
@@ -190,6 +195,8 @@ func ws(c echo.Context, start, stop, reset chan int, newData chan string) error 
 	// defers are executed in LIFO fashion
 	defer ws.Close()
 
+	resetBoard(c, ws)
+
 	for {
 		select {
 		case x := <-newData:
@@ -201,10 +208,7 @@ func ws(c echo.Context, start, stop, reset chan int, newData chan string) error 
 			go runConwaysRulesAndReturnState(stop, newData)
 		case <-reset:
 			stop <- 1
-			err := ws.WriteMessage(websocket.TextMessage, []byte(resetBoardGame()))
-			if err != nil {
-				c.Logger().Error(err)
-			}
+			resetBoard(c, ws)
 		}
 	}
 
