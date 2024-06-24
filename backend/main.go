@@ -18,7 +18,7 @@ const GAME_BOARD_SIZE = BOARD_COLUMNS * BOARD_COLUMNS
 
 var (
 	upgrader            = websocket.Upgrader{}
-	mutCurrentGameState = make([]int, 0, GAME_BOARD_SIZE)
+	mutCurrentGameState = make([]int, GAME_BOARD_SIZE)
 	mu                  sync.Mutex
 )
 
@@ -54,7 +54,7 @@ func drawBoard(gameState []int) string {
 }
 
 func getInitialGameState() []int {
-	state := make([]int, 0, GAME_BOARD_SIZE)
+	state := make([]int, GAME_BOARD_SIZE)
 
 	for range GAME_BOARD_SIZE {
 		state = append(state, 0)
@@ -64,7 +64,7 @@ func getInitialGameState() []int {
 }
 
 func getRandomGameState() []int {
-	state := make([]int, 0, GAME_BOARD_SIZE)
+	state := make([]int, GAME_BOARD_SIZE)
 	for range GAME_BOARD_SIZE {
 		state = append(state, rand.Intn(2))
 	}
@@ -130,6 +130,20 @@ func getCellStateBasedOnNeighbours(cellIndex int, readOnlyCurrentState []int) in
 	return currentStateOfCell
 }
 
+func setGameData(state []int) {
+	mu.Lock()
+	defer mu.Unlock()
+	copy(mutCurrentGameState, state)
+}
+
+func getCurrentStateData() []int {
+	mu.Lock()
+	defer mu.Unlock()
+	readOnlyCurrentState := make([]int, GAME_BOARD_SIZE)
+	copy(readOnlyCurrentState, mutCurrentGameState)
+	return readOnlyCurrentState
+}
+
 func updateCurrentGameState() {
 	readOnlyCurrentState := getCurrentStateData()
 	mutableCopy := getCurrentStateData()
@@ -141,37 +155,22 @@ func updateCurrentGameState() {
 	setGameData(mutableCopy)
 }
 
-func setGameData(state []int) {
-	copy(mutCurrentGameState, state)
-}
-
-func getCurrentStateData() []int {
-	readOnlyCurrentState := make([]int, len(mutCurrentGameState))
-	copy(readOnlyCurrentState, mutCurrentGameState)
-
-	return readOnlyCurrentState
-}
-
 func runConwaysRulesAndReturnState(stop chan int, newData chan string) {
-	mu.Lock()
 	initialState := getBlinker()
 	setGameData(initialState)
-	mu.Unlock()
 
 	newData <- drawBoard(initialState)
 
 	for {
 		select {
 		case <-stop:
-			// break only breaks from the innermost loop (in this case would be select)
-			// return breaks from all
+			// 'break' only breaks from the innermost loop (in this case would be select)
+			// 'return' breaks from all
 			return
 		default:
-			mu.Lock()
 			updateCurrentGameState()
 			currentGameState := getCurrentStateData()
 			updatedData := drawBoard(currentGameState)
-			mu.Unlock()
 
 			newData <- updatedData
 			time.Sleep(1 * time.Second)
@@ -190,28 +189,19 @@ func ws(c echo.Context, start, stop, reset chan int, newData chan string) error 
 
 	// defers are executed in LIFO fashion
 	defer ws.Close()
-	defer c.Logger().Info("CLOSING....")
 
 	for {
 		select {
-		case <-newData:
-			// Write
-			err := ws.WriteMessage(websocket.TextMessage, []byte(<-newData))
+		case x := <-newData:
+			err := ws.WriteMessage(websocket.TextMessage, []byte(x))
 			if err != nil {
 				c.Logger().Error(err)
 			}
 		case <-start:
-			initialGameState := getInitialGameState()
-			setGameData(initialGameState)
 			go runConwaysRulesAndReturnState(stop, newData)
 		case <-reset:
 			stop <- 1
-			mu.Lock()
-			reset := resetBoardGame()
-			mu.Unlock()
-
-			// Write
-			err := ws.WriteMessage(websocket.TextMessage, []byte(reset))
+			err := ws.WriteMessage(websocket.TextMessage, []byte(resetBoardGame()))
 			if err != nil {
 				c.Logger().Error(err)
 			}
