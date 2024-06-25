@@ -20,6 +20,7 @@ var (
 	upgrader            = websocket.Upgrader{}
 	mutCurrentGameState = make([]int, GAME_BOARD_SIZE)
 	mu                  sync.Mutex
+	isItRunning         bool = false
 )
 
 func getColorBasedOnCellAliveOrDead(state int) string {
@@ -86,18 +87,6 @@ func getGlider() []int {
 	return state
 }
 
-func resetBoard(c echo.Context, ws *websocket.Conn) {
-	initialState := getGlider()
-	setGameData(initialState)
-	initialBoard := drawBoard(initialState)
-
-	c.Logger().Infof("Sending new data from reset... %d", len(initialState))
-	err := ws.WriteMessage(websocket.TextMessage, []byte(initialBoard))
-	if err != nil {
-		c.Logger().Error(err)
-	}
-}
-
 func getNumberOfAliveNeighbours(cellIndex int, readOnlyCurrentState []int) int {
 	topIndex := cellIndex - BOARD_COLUMNS
 	bottomIndex := cellIndex + BOARD_COLUMNS
@@ -141,6 +130,17 @@ func getCellStateBasedOnNeighbours(cellIndex int, readOnlyCurrentState []int) in
 	return currentStateOfCell
 }
 
+func resetBoard(c echo.Context, ws *websocket.Conn) {
+	initialState := getGlider()
+	setGameData(initialState)
+	initialBoard := drawBoard(initialState)
+
+	c.Logger().Info("Sending new data from reset...")
+	err := ws.WriteMessage(websocket.TextMessage, []byte(initialBoard))
+	if err != nil {
+		c.Logger().Error(err)
+	}
+}
 func setGameData(state []int) {
 	mu.Lock()
 	defer mu.Unlock()
@@ -173,6 +173,7 @@ func runConwaysRulesAndReturnState(c echo.Context, stop chan int, newData chan s
 			// 'break' only breaks from the innermost loop (in this case would be select)
 			// 'return' breaks from all
 			c.Logger().Info("Stopping...")
+			isItRunning = false
 			return
 		default:
 			updateCurrentGameState()
@@ -186,7 +187,7 @@ func runConwaysRulesAndReturnState(c echo.Context, stop chan int, newData chan s
 }
 
 // To test via CLI: wscat -H "Origin: http://localhost:4444" -c ws://localhost:4444/ws
-func ws(c echo.Context, start, stop, reset chan int, newData chan string) error {
+func ws(c echo.Context, start <-chan int, stop chan int, reset <-chan int, newData chan string) error {
 	upgrader.CheckOrigin = func(r *http.Request) bool { return true }
 	ws, err := upgrader.Upgrade(c.Response(), c.Request(), nil)
 	if err != nil {
@@ -208,11 +209,15 @@ func ws(c echo.Context, start, stop, reset chan int, newData chan string) error 
 				c.Logger().Error(err)
 			}
 		case <-start:
+			isItRunning = true
 			c.Logger().Info("Starting...")
 			go runConwaysRulesAndReturnState(c, stop, newData)
 		case <-reset:
 			c.Logger().Info("Resetting...")
-			stop <- 1
+			// ERROR: Here is where lies the error...
+			if isItRunning {
+				stop <- 1
+			}
 			resetBoard(c, ws)
 		}
 	}
