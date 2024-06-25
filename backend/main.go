@@ -48,8 +48,8 @@ func drawBoard(gameState []int) string {
 func getInitialGameState() []int {
 	state := make([]int, GAME_BOARD_SIZE)
 
-	for range GAME_BOARD_SIZE {
-		state = append(state, 0)
+	for index := range GAME_BOARD_SIZE {
+		state[index] = 0
 	}
 
 	return state
@@ -57,8 +57,8 @@ func getInitialGameState() []int {
 
 func getRandomGameState() []int {
 	state := make([]int, GAME_BOARD_SIZE)
-	for range GAME_BOARD_SIZE {
-		state = append(state, rand.Intn(2))
+	for index := range GAME_BOARD_SIZE {
+		state[index] = rand.Intn(2)
 	}
 
 	return state
@@ -91,6 +91,7 @@ func resetBoard(c echo.Context, ws *websocket.Conn) {
 	setGameData(initialState)
 	initialBoard := drawBoard(initialState)
 
+	c.Logger().Infof("Sending new data from reset... %d", len(initialState))
 	err := ws.WriteMessage(websocket.TextMessage, []byte(initialBoard))
 	if err != nil {
 		c.Logger().Error(err)
@@ -165,12 +166,13 @@ func updateCurrentGameState() {
 	setGameData(mutableCopy)
 }
 
-func runConwaysRulesAndReturnState(stop chan int, newData chan string) {
+func runConwaysRulesAndReturnState(c echo.Context, stop chan int, newData chan string) {
 	for {
 		select {
 		case <-stop:
 			// 'break' only breaks from the innermost loop (in this case would be select)
 			// 'return' breaks from all
+			c.Logger().Info("Stopping...")
 			return
 		default:
 			updateCurrentGameState()
@@ -200,13 +202,16 @@ func ws(c echo.Context, start, stop, reset chan int, newData chan string) error 
 	for {
 		select {
 		case x := <-newData:
+			c.Logger().Info("Sending new data...")
 			err := ws.WriteMessage(websocket.TextMessage, []byte(x))
 			if err != nil {
 				c.Logger().Error(err)
 			}
 		case <-start:
-			go runConwaysRulesAndReturnState(stop, newData)
+			c.Logger().Info("Starting...")
+			go runConwaysRulesAndReturnState(c, stop, newData)
 		case <-reset:
+			c.Logger().Info("Resetting...")
 			stop <- 1
 			resetBoard(c, ws)
 		}
@@ -241,7 +246,6 @@ func main() {
 		reset <- 1
 		return c.NoContent(http.StatusNoContent)
 	})
-
 	e.GET("/ws", func(c echo.Context) error {
 		return ws(c, start, stop, reset, newData)
 	})
