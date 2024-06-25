@@ -214,7 +214,6 @@ func ws(c echo.Context, start <-chan int, stop chan int, reset <-chan int, newDa
 			go runConwaysRulesAndReturnState(c, stop, newData)
 		case <-reset:
 			c.Logger().Info("Resetting...")
-			// ERROR: Here is where lies the error...
 			if isItRunning {
 				stop <- 1
 			}
