@@ -17,6 +17,18 @@
       Reset
     </button>
 
+    <div>
+      <input
+        type="range"
+        id="speed"
+        name="speed"
+        min="1"
+        max="1000"
+        hx-post="http://localhost:4444/speed"
+      />
+      <label for="speed">Speed</label>
+    </div>
+
     <div hx-ext="ws" ws-connect="ws://localhost:4444/ws">
       <div
         id="game"

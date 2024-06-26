@@ -4,9 +4,11 @@ import (
 	"fmt"
 	"math/rand"
 	"net/http"
+	"strconv"
 	"sync"
 	"time"
 
+	"github.com/go-playground/validator"
 	"github.com/gorilla/websocket"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
@@ -21,6 +23,7 @@ var (
 	mutCurrentGameState = make([]int, GAME_BOARD_SIZE)
 	mu                  sync.Mutex
 	isItRunning         bool = false
+	gameSpeed           int  = 1
 )
 
 func getColorBasedOnCellAliveOrDead(state int) string {
@@ -181,7 +184,7 @@ func runConwaysRulesAndReturnState(c echo.Context, stop chan int, newData chan s
 			updatedData := drawBoard(currentGameState)
 
 			newData <- updatedData
-			time.Sleep(1 * time.Second)
+			time.Sleep(time.Duration(1 / gameSpeed * float64(time.Second)))
 		}
 	}
 }
@@ -223,8 +226,25 @@ func ws(c echo.Context, start <-chan int, stop chan int, reset <-chan int, newDa
 
 }
 
+type GameSpeed struct {
+	Speed string `form:"speed" json:"speed" validate:"required"`
+}
+
+// CustomValidator struct
+type CustomValidator struct {
+	validator *validator.Validate
+}
+
+// Validate method implementation
+func (cv *CustomValidator) Validate(i interface{}) error {
+	return cv.validator.Struct(i)
+}
+
 func main() {
 	e := echo.New()
+
+	// Register the custom validator
+	e.Validator = &CustomValidator{validator: validator.New()}
 
 	// Middleware
 	e.Use(middleware.Logger())
@@ -252,6 +272,28 @@ func main() {
 	})
 	e.GET("/ws", func(c echo.Context) error {
 		return ws(c, start, stop, reset, newData)
+	})
+	e.POST("/speed", func(c echo.Context) (err error) {
+		u := new(GameSpeed)
+		if err = c.Bind(&u); err != nil {
+			c.Logger().Errorf("Could not bind to struct %s", err.Error())
+			return err
+		}
+
+		if err := c.Validate(u); err != nil {
+			return err
+		}
+
+		speed := c.FormValue("speed")
+
+		intSpeed, err := strconv.Atoi(speed)
+		if err != nil {
+			c.Logger().Errorf("Could not convert to integer: %s", err.Error())
+			return err
+		}
+		gameSpeed = intSpeed
+		// ERROR: Validator not registered
+		return c.NoContent(http.StatusOK)
 	})
 
 	e.Logger.Fatal(e.Start(":4444"))
