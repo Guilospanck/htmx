@@ -8,7 +8,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/go-playground/validator"
 	"github.com/gorilla/websocket"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
@@ -138,7 +137,7 @@ func resetBoard(c echo.Context, ws *websocket.Conn) {
 	setGameData(initialState)
 	initialBoard := drawBoard(initialState)
 
-	c.Logger().Info("Sending new data from reset...")
+	c.Logger().Warn("Sending new data from reset...")
 	err := ws.WriteMessage(websocket.TextMessage, []byte(initialBoard))
 	if err != nil {
 		c.Logger().Error(err)
@@ -175,7 +174,7 @@ func runConwaysRulesAndReturnState(c echo.Context, stop chan int, newData chan s
 		case <-stop:
 			// 'break' only breaks from the innermost loop (in this case would be select)
 			// 'return' breaks from all
-			c.Logger().Info("Stopping...")
+			c.Logger().Warn("Stopping...")
 			isItRunning = false
 			return
 		default:
@@ -184,7 +183,7 @@ func runConwaysRulesAndReturnState(c echo.Context, stop chan int, newData chan s
 			updatedData := drawBoard(currentGameState)
 
 			newData <- updatedData
-			time.Sleep(time.Duration(1 / gameSpeed * float64(time.Second)))
+			time.Sleep(time.Duration(1 / gameSpeed * int(time.Second)))
 		}
 	}
 }
@@ -206,17 +205,17 @@ func ws(c echo.Context, start <-chan int, stop chan int, reset <-chan int, newDa
 	for {
 		select {
 		case x := <-newData:
-			c.Logger().Info("Sending new data...")
+			c.Logger().Warn("Sending new data...")
 			err := ws.WriteMessage(websocket.TextMessage, []byte(x))
 			if err != nil {
 				c.Logger().Error(err)
 			}
 		case <-start:
 			isItRunning = true
-			c.Logger().Info("Starting...")
+			c.Logger().Warn("Starting...")
 			go runConwaysRulesAndReturnState(c, stop, newData)
 		case <-reset:
-			c.Logger().Info("Resetting...")
+			c.Logger().Warn("Resetting...")
 			if isItRunning {
 				stop <- 1
 			}
@@ -227,31 +226,18 @@ func ws(c echo.Context, start <-chan int, stop chan int, reset <-chan int, newDa
 }
 
 type GameSpeed struct {
-	Speed string `form:"speed" json:"speed" validate:"required"`
-}
-
-// CustomValidator struct
-type CustomValidator struct {
-	validator *validator.Validate
-}
-
-// Validate method implementation
-func (cv *CustomValidator) Validate(i interface{}) error {
-	return cv.validator.Struct(i)
+	Speed string `json:"speed" form:"speed" query:"speed"`
 }
 
 func main() {
 	e := echo.New()
-
-	// Register the custom validator
-	e.Validator = &CustomValidator{validator: validator.New()}
 
 	// Middleware
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
 	e.Use(middleware.CORS())
 
-	e.Logger.SetLevel(log.INFO)
+	e.Logger.SetLevel(log.WARN)
 
 	start := make(chan int)
 	stop := make(chan int)
@@ -275,24 +261,19 @@ func main() {
 	})
 	e.POST("/speed", func(c echo.Context) (err error) {
 		u := new(GameSpeed)
-		if err = c.Bind(&u); err != nil {
-			c.Logger().Errorf("Could not bind to struct %s", err.Error())
+		if err = c.Bind(u); err != nil {
 			return err
 		}
 
-		if err := c.Validate(u); err != nil {
-			return err
-		}
+		c.Logger().Warnf("%+v", u)
 
-		speed := c.FormValue("speed")
-
-		intSpeed, err := strconv.Atoi(speed)
+		intSpeed, err := strconv.Atoi(u.Speed)
 		if err != nil {
 			c.Logger().Errorf("Could not convert to integer: %s", err.Error())
 			return err
 		}
 		gameSpeed = intSpeed
-		// ERROR: Validator not registered
+
 		return c.NoContent(http.StatusOK)
 	})
 
