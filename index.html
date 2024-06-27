@@ -16,14 +16,14 @@
     <button hx-get="http://localhost:4444/reset" hx-trigger="click">
       Reset
     </button>
-
     <div>
       <input
         type="range"
         id="speed"
         name="speed"
         min="1"
-        max="1000"
+        max="100"
+        value="1"
         hx-post="http://localhost:4444/speed"
       />
       <label for="speed">Speed</label>

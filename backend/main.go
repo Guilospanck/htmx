@@ -143,6 +143,7 @@ func resetBoard(c echo.Context, ws *websocket.Conn) {
 		c.Logger().Error(err)
 	}
 }
+
 func setGameData(state []int) {
 	mu.Lock()
 	defer mu.Unlock()
@@ -168,6 +169,15 @@ func updateCurrentGameState() {
 	setGameData(mutableCopy)
 }
 
+// f(x) = (-1.9x + 1.9)/99 + 2
+// This equation maps from slider values (1 to 100)
+// into duration of sleep (2s to 1/10s)
+func calculateSleep() time.Duration {
+	fx := (-1.9*float64(gameSpeed)+1.9)/99 + 2
+	duration := time.Duration(fx * float64(time.Second))
+	return duration
+}
+
 func runConwaysRulesAndReturnState(c echo.Context, stop chan int, newData chan string) {
 	for {
 		select {
@@ -183,7 +193,9 @@ func runConwaysRulesAndReturnState(c echo.Context, stop chan int, newData chan s
 			updatedData := drawBoard(currentGameState)
 
 			newData <- updatedData
-			time.Sleep(time.Duration(1 / gameSpeed * int(time.Second)))
+			// INFO: this is resulting on an error (maybe not this, but setting the value of gameSpeed)
+			// Error of broken pipe
+			time.Sleep(calculateSleep())
 		}
 	}
 }
@@ -225,10 +237,6 @@ func ws(c echo.Context, start <-chan int, stop chan int, reset <-chan int, newDa
 
 }
 
-type GameSpeed struct {
-	Speed string `json:"speed" form:"speed" query:"speed"`
-}
-
 func main() {
 	e := echo.New()
 
@@ -260,6 +268,10 @@ func main() {
 		return ws(c, start, stop, reset, newData)
 	})
 	e.POST("/speed", func(c echo.Context) (err error) {
+		type GameSpeed struct {
+			Speed string `json:"speed" form:"speed" query:"speed"`
+		}
+
 		u := new(GameSpeed)
 		if err = c.Bind(u); err != nil {
 			return err
