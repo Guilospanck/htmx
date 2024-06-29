@@ -14,7 +14,7 @@ import (
 	"github.com/labstack/gommon/log"
 )
 
-const BOARD_COLUMNS = 20
+const BOARD_COLUMNS = 100
 const GAME_BOARD_SIZE = BOARD_COLUMNS * BOARD_COLUMNS
 
 var (
@@ -40,10 +40,17 @@ func drawBoard(gameState []int) string {
 	}
 
 	response := fmt.Sprintf(`
-	<div id="game" hx-swap-oob="innerhtml">
+	<div id="game" hx-swap-oob="outerHTML"
+		style="
+          display: grid;
+          gap: 2px;
+          grid-template-columns: repeat(%d, 15px);
+          grid-template-rows: repeat(%d, 15px);
+        "
+	>
 		%s
 	</div>
-	`, paragraphs)
+	`, BOARD_COLUMNS, BOARD_COLUMNS, paragraphs)
 
 	return response
 }
@@ -80,11 +87,11 @@ func getBlinker() []int {
 func getGlider() []int {
 	state := getInitialGameState()
 
-	state[170] = 1
-	state[190] = 1
-	state[210] = 1
-	state[209] = 1
-	state[188] = 1
+	state[850] = 1
+	state[950] = 1
+	state[1050] = 1
+	state[1049] = 1
+	state[948] = 1
 
 	return state
 }
@@ -169,12 +176,17 @@ func updateCurrentGameState() {
 	setGameData(mutableCopy)
 }
 
-// f(x) = (-1.9x + 1.9)/99 + 2
+// f(x) = -999/99000*(slider - 1) + 1
 // This equation maps from slider values (1 to 100)
-// into duration of sleep (2s to 1/10s)
+// into duration of sleep (1s to 1/1000s)
 func calculateSleep() time.Duration {
-	fx := (-1.9*float64(gameSpeed)+1.9)/99 + 2
-	duration := time.Duration(fx * float64(time.Second))
+	fx := ((float64(gameSpeed)-1)*(1/1000-1) + 99) * 1 / 99
+
+	if gameSpeed > 1 {
+		return time.Duration(int64(fx*1000) * int64(time.Millisecond))
+	}
+
+	duration := time.Duration(int64(fx) * int64(time.Second))
 	return duration
 }
 
@@ -193,8 +205,6 @@ func runConwaysRulesAndReturnState(c echo.Context, stop chan int, newData chan s
 			updatedData := drawBoard(currentGameState)
 
 			newData <- updatedData
-			// INFO: this is resulting on an error (maybe not this, but setting the value of gameSpeed)
-			// Error of broken pipe
 			time.Sleep(calculateSleep())
 		}
 	}
@@ -245,7 +255,7 @@ func main() {
 	e.Use(middleware.Recover())
 	e.Use(middleware.CORS())
 
-	e.Logger.SetLevel(log.WARN)
+	e.Logger.SetLevel(log.INFO)
 
 	start := make(chan int)
 	stop := make(chan int)
