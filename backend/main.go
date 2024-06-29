@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strconv"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/gorilla/websocket"
@@ -14,15 +15,15 @@ import (
 	"github.com/labstack/gommon/log"
 )
 
-const BOARD_COLUMNS = 100
-const GAME_BOARD_SIZE = BOARD_COLUMNS * BOARD_COLUMNS
+const BOARD_COLUMNS int = 100
+const GAME_BOARD_SIZE int = BOARD_COLUMNS * BOARD_COLUMNS
 
 var (
 	upgrader            = websocket.Upgrader{}
 	mutCurrentGameState = make([]int, GAME_BOARD_SIZE)
 	mu                  sync.Mutex
 	isItRunning         bool = false
-	gameSpeed           int  = 1
+	gameSpeed           atomic.Uint32
 )
 
 func getColorBasedOnCellAliveOrDead(state int) string {
@@ -178,11 +179,13 @@ func updateCurrentGameState() {
 
 // f(x) = -999/99000*(slider - 1) + 1
 // This equation maps from slider values (1 to 100)
-// into duration of sleep (1s to 1/1000s)
+// into duration of sleep (1s to 1ms)
 func calculateSleep() time.Duration {
-	fx := ((float64(gameSpeed)-1)*(1/1000-1) + 99) * 1 / 99
+	rangeSpeed := gameSpeed.Load()
 
-	if gameSpeed > 1 {
+	fx := ((float64(rangeSpeed)-1)*(1/1000-1) + 99) * 1 / 99
+
+	if rangeSpeed > 1 {
 		return time.Duration(int64(fx*1000) * int64(time.Millisecond))
 	}
 
@@ -262,6 +265,8 @@ func main() {
 	reset := make(chan int)
 	newData := make(chan string)
 
+	gameSpeed.Store(1)
+
 	e.GET("/start", func(c echo.Context) error {
 		start <- 1
 		return c.NoContent(http.StatusNoContent)
@@ -287,14 +292,13 @@ func main() {
 			return err
 		}
 
-		c.Logger().Warnf("%+v", u)
-
 		intSpeed, err := strconv.Atoi(u.Speed)
 		if err != nil {
 			c.Logger().Errorf("Could not convert to integer: %s", err.Error())
 			return err
 		}
-		gameSpeed = intSpeed
+
+		gameSpeed.Store(uint32(intSpeed))
 
 		return c.NoContent(http.StatusOK)
 	})
