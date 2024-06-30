@@ -37,20 +37,6 @@ func getColorBasedOnCellAliveOrDead(state int) string {
 }
 
 func drawBoard(gameState []int) string {
-	// for _, item := range gameState {
-	// 	color := getColorBasedOnCellAliveOrDead(item)
-	// 	cell := fmt.Sprintf(
-	// 		`
-	// 			let rowStep = counter * CELL_SIZE;
-	// 			ctx.beginPath();
-	// 			ctx.fillStyle = %s;
-	// 			ctx.strokeRect(10 + rowStep, 10, CELL_SIZE, CELL_SIZE);
-	// 			ctx.fillRect(10 + rowStep, 10, CELL_SIZE, CELL_SIZE);
-	// 			ctx.stroke();
-	// 		`, color)
-	// 	return ""
-	// }
-
 	marshalledGameState, _ := json.Marshal(gameState)
 
 	response := fmt.Sprintf(`
@@ -83,38 +69,16 @@ func drawBoard(gameState []int) string {
 				let rowStep = i * CELL_SIZE;
 				let columnStep = j * CELL_SIZE;
 
+				let color = data[index] === 1 ? 'white' : 'black';
+
 				ctx.beginPath();
-				ctx.fillStyle = "blue";
+				ctx.fillStyle = color;
 				ctx.strokeRect(10 + rowStep, 10 + columnStep, CELL_SIZE, CELL_SIZE);
 				ctx.fillRect(10 + rowStep, 10 + columnStep, CELL_SIZE, CELL_SIZE);
 				ctx.stroke();
 
 				i++;
 			}
-
-			// let counter = 0;
-			// while (counter < NUMBER_OF_ROWS) {
-			// 	let rowStep = counter * CELL_SIZE;
-			// 	ctx.beginPath();
-			// 	ctx.fillStyle = "blue";
-			// 	ctx.strokeRect(10 + rowStep, 10, CELL_SIZE, CELL_SIZE);
-			// 	ctx.fillRect(10 + rowStep, 10, CELL_SIZE, CELL_SIZE);
-			// 	ctx.stroke();
-			//
-			// 	counter++;
-			//
-			// 	if (counter === 0) {
-			// 		continue;
-			// 	}
-			//
-			// 	for (let j = 0; j < NUMBER_OF_ROWS; j++) {
-			// 		let columnStep = j * CELL_SIZE;
-			// 		ctx.strokeRect(10 + rowStep, 10 + columnStep, CELL_SIZE, CELL_SIZE);
-			// 		ctx.fillRect(10 + rowStep, 10 + columnStep, CELL_SIZE, CELL_SIZE);
-			// 		ctx.stroke();
-			// 	}
-			// }
-
 		</script>
 	`, string(marshalledGameState))
 
