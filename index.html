@@ -30,7 +30,41 @@
     </div>
 
     <div hx-ext="ws" ws-connect="ws://localhost:4444/ws">
-      <div id="game"></div>
+      <canvas id="game" width="800" height="800"></canvas>
     </div>
+
+    <script>
+      const NUMBER_OF_ROWS = 50;
+      const NUMBER_OF_COLUMNS = 50;
+      const CELL_SIZE = 15;
+
+      const canvas = document.getElementById("game");
+      const ctx = canvas.getContext("2d");
+
+      ctx.lineWidth = "2";
+      ctx.strokeStyle = "red";
+
+      let counter = 0;
+      while (counter < NUMBER_OF_ROWS) {
+        let rowStep = counter * CELL_SIZE;
+
+        ctx.strokeRect(10 + rowStep, 10, CELL_SIZE, CELL_SIZE);
+        ctx.fillRect(10 + rowStep, 10, CELL_SIZE, CELL_SIZE);
+        ctx.stroke();
+
+        counter++;
+
+        if (counter === 0) {
+          continue;
+        }
+
+        for (let j = 0; j < NUMBER_OF_ROWS; j++) {
+          let columnStep = j * CELL_SIZE;
+          ctx.strokeRect(10 + rowStep, 10 + columnStep, CELL_SIZE, CELL_SIZE);
+          ctx.fillRect(10 + rowStep, 10 + columnStep, CELL_SIZE, CELL_SIZE);
+          ctx.stroke();
+        }
+      }
+    </script>
   </body>
 </html>

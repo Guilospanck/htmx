@@ -41,17 +41,10 @@ func drawBoard(gameState []int) string {
 	}
 
 	response := fmt.Sprintf(`
-	<div id="game" hx-swap-oob="outerHTML"
-		style="
-          display: grid;
-          gap: 2px;
-          grid-template-columns: repeat(%d, 15px);
-          grid-template-rows: repeat(%d, 15px);
-        "
-	>
+		<canvas id="potato" hx-swap-oob="outerHTML" width="%d" height="%d">
 		%s
-	</div>
-	`, BOARD_COLUMNS, BOARD_COLUMNS, paragraphs)
+	</canvas>
+	`, BOARD_COLUMNS*15, BOARD_COLUMNS*15, paragraphs)
 
 	return response
 }
