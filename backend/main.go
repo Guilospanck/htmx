@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"math/rand"
 	"net/http"
@@ -15,7 +16,8 @@ import (
 	"github.com/labstack/gommon/log"
 )
 
-const BOARD_COLUMNS int = 100
+const CELL_SIZE int = 15
+const BOARD_COLUMNS int = 50
 const GAME_BOARD_SIZE int = BOARD_COLUMNS * BOARD_COLUMNS
 
 var (
@@ -35,16 +37,86 @@ func getColorBasedOnCellAliveOrDead(state int) string {
 }
 
 func drawBoard(gameState []int) string {
-	paragraphs := ""
-	for idx, value := range gameState {
-		paragraphs += fmt.Sprintf(`<div id="cell-%d" style="background: %s; width: 15px; height: 15px" class="grid-item"></div>`, idx, getColorBasedOnCellAliveOrDead(value))
-	}
+	// for _, item := range gameState {
+	// 	color := getColorBasedOnCellAliveOrDead(item)
+	// 	cell := fmt.Sprintf(
+	// 		`
+	// 			let rowStep = counter * CELL_SIZE;
+	// 			ctx.beginPath();
+	// 			ctx.fillStyle = %s;
+	// 			ctx.strokeRect(10 + rowStep, 10, CELL_SIZE, CELL_SIZE);
+	// 			ctx.fillRect(10 + rowStep, 10, CELL_SIZE, CELL_SIZE);
+	// 			ctx.stroke();
+	// 		`, color)
+	// 	return ""
+	// }
+
+	marshalledGameState, _ := json.Marshal(gameState)
 
 	response := fmt.Sprintf(`
-		<canvas id="potato" hx-swap-oob="outerHTML" width="%d" height="%d">
-		%s
-	</canvas>
-	`, BOARD_COLUMNS*15, BOARD_COLUMNS*15, paragraphs)
+		<script id="htmx_pls_here" hx-swap-oob="outerHTML">
+			const NUMBER_OF_ROWS = 50;
+			const NUMBER_OF_COLUMNS = 50;
+			const CELL_SIZE = 15;
+
+			const canvas = document.getElementById("game");
+			const ctx = canvas.getContext("2d");
+
+			ctx.lineWidth = "2";
+			ctx.strokeStyle = "red";
+
+			const data = %s
+
+			let i = 0;
+			let j = 0;
+
+			for(const strIndex in data) {
+				let index = parseInt(strIndex);
+
+				if((index + 1) %% NUMBER_OF_COLUMNS === 0 && index !== 0){
+					// go down
+					i = 0;
+					j++;
+					continue;
+				}
+
+				let rowStep = i * CELL_SIZE;
+				let columnStep = j * CELL_SIZE;
+
+				ctx.beginPath();
+				ctx.fillStyle = "blue";
+				ctx.strokeRect(10 + rowStep, 10 + columnStep, CELL_SIZE, CELL_SIZE);
+				ctx.fillRect(10 + rowStep, 10 + columnStep, CELL_SIZE, CELL_SIZE);
+				ctx.stroke();
+
+				i++;
+			}
+
+			// let counter = 0;
+			// while (counter < NUMBER_OF_ROWS) {
+			// 	let rowStep = counter * CELL_SIZE;
+			// 	ctx.beginPath();
+			// 	ctx.fillStyle = "blue";
+			// 	ctx.strokeRect(10 + rowStep, 10, CELL_SIZE, CELL_SIZE);
+			// 	ctx.fillRect(10 + rowStep, 10, CELL_SIZE, CELL_SIZE);
+			// 	ctx.stroke();
+			//
+			// 	counter++;
+			//
+			// 	if (counter === 0) {
+			// 		continue;
+			// 	}
+			//
+			// 	for (let j = 0; j < NUMBER_OF_ROWS; j++) {
+			// 		let columnStep = j * CELL_SIZE;
+			// 		ctx.strokeRect(10 + rowStep, 10 + columnStep, CELL_SIZE, CELL_SIZE);
+			// 		ctx.fillRect(10 + rowStep, 10 + columnStep, CELL_SIZE, CELL_SIZE);
+			// 		ctx.stroke();
+			// 	}
+			// }
+
+		</script>
+	`, string(marshalledGameState))
 
 	return response
 }
