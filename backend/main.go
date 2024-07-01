@@ -115,11 +115,11 @@ func getBlinker() []int {
 func getGlider() []int {
 	state := getInitialGameState()
 
-	state[850] = 1
-	state[950] = 1
-	state[1050] = 1
-	state[1049] = 1
-	state[948] = 1
+	state[825] = 1
+	state[875] = 1
+	state[925] = 1
+	state[924] = 1
+	state[873] = 1
 
 	return state
 }
@@ -168,7 +168,7 @@ func getCellStateBasedOnNeighbours(cellIndex int, readOnlyCurrentState []int) in
 }
 
 func resetBoard(c echo.Context, ws *websocket.Conn) {
-	initialState := getBlinker()
+	initialState := getGlider()
 	setGameData(initialState)
 	initialBoard := drawBoard(initialState)
 
