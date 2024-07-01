@@ -235,9 +235,7 @@ func runConwaysRulesAndReturnState(c echo.Context, stop chan int, newData chan s
 			updatedData := drawBoard(currentGameState)
 
 			newData <- updatedData
-			// time.Sleep(calculateSleep())
-			// INFO: uncomment above when the app is running faster
-			time.Sleep(100 * time.Millisecond)
+			time.Sleep(calculateSleep())
 		}
 	}
 }
