@@ -46,7 +46,7 @@ func drawBoard(gameState []int) string {
 			var canvas = document.getElementById("game");
 			var ctx = canvas.getContext("2d");
 
-			ctx.lineWidth = "2";
+			ctx.lineWidth = "0.1";
 			ctx.strokeStyle = "white";
 
 			var data = %s
@@ -71,8 +71,8 @@ func drawBoard(gameState []int) string {
 
 				ctx.beginPath();
 				ctx.fillStyle = color;
-				ctx.strokeRect(10 + rowStep, 10 + columnStep, CELL_SIZE, CELL_SIZE);
-				ctx.fillRect(10 + rowStep, 10 + columnStep, CELL_SIZE, CELL_SIZE);
+				ctx.strokeRect(rowStep, columnStep, CELL_SIZE, CELL_SIZE);
+				ctx.fillRect(rowStep, columnStep, CELL_SIZE, CELL_SIZE);
 				ctx.stroke();
 
 				i++;
