@@ -8,7 +8,7 @@
     <script src="https://unpkg.com/htmx-ext-ws@2.0.0/ws.js"></script>
     <!-- <meta name="htmx-config" content='{"defaultSwapStyle":"outerHTML"}'> -->
   </head>
-  <body style="background: gray">
+  <body style="background: gray; box-sizing: border-box">
     <button hx-get="http://localhost:4444/start" hx-trigger="click">
       Start
     </button>
@@ -29,10 +29,51 @@
       <label for="speed">Speed</label>
     </div>
 
-    <div hx-ext="ws" ws-connect="ws://localhost:4444/ws">
-      <canvas id="game" width="800" height="800"></canvas>
-    </div>
+    <div hx-ext="ws" ws-connect="ws://localhost:4444/ws"></div>
+    <canvas id="game" width="800" height="800"></canvas>
 
     <script id="htmx_pls_here"></script>
+    <script id="handle_canvas_click">
+      var canvas = document.getElementById("game");
+      var ctx = canvas.getContext("2d");
+
+      var canvasBoundingRect = canvas.getBoundingClientRect();
+
+      var canvasX = canvasBoundingRect.x;
+      var canvasY = canvasBoundingRect.y;
+      var canvasWidth = canvasBoundingRect.width;
+      var canvasHeight = canvasBoundingRect.height;
+
+      var CELL_SIZE = 15;
+      var NUMBER_OF_ROWS = 50;
+      var NUMBER_OF_COLUMNS = 50;
+
+      canvas.addEventListener("click", (event) => {
+        const clickX = event.x;
+        const clickY = event.y;
+
+        const x = clickX - canvasX;
+        const y = clickY - canvasY;
+
+        const cellX = Math.floor(x / CELL_SIZE);
+        const cellY = Math.floor(y / CELL_SIZE);
+
+        ctx.beginPath();
+        ctx.fillStyle = "white";
+        ctx.strokeRect(
+          cellX * CELL_SIZE,
+          cellY * CELL_SIZE,
+          CELL_SIZE,
+          CELL_SIZE,
+        );
+        ctx.fillRect(
+          cellX * CELL_SIZE,
+          cellY * CELL_SIZE,
+          CELL_SIZE,
+          CELL_SIZE,
+        );
+        ctx.stroke();
+      });
+    </script>
   </body>
 </html>
