@@ -41,20 +41,18 @@ func drawBoard(gameState []int) string {
 
 	response := fmt.Sprintf(`
 		<script id="htmx_pls_here" hx-swap-oob="outerHTML">
-			const NUMBER_OF_ROWS = 50;
-			const NUMBER_OF_COLUMNS = 50;
-			const CELL_SIZE = 15;
-
-			const canvas = document.getElementById("game");
-			const ctx = canvas.getContext("2d");
+			var NUMBER_OF_COLUMNS = 50;
+			var CELL_SIZE = 15;
+			var canvas = document.getElementById("game");
+			var ctx = canvas.getContext("2d");
 
 			ctx.lineWidth = "2";
-			ctx.strokeStyle = "red";
+			ctx.strokeStyle = "white";
 
-			const data = %s
+			var data = %s
 
-			let i = 0;
-			let j = 0;
+			var i = 0;
+			var j = 0;
 
 			for(const strIndex in data) {
 				let index = parseInt(strIndex);
@@ -170,7 +168,7 @@ func getCellStateBasedOnNeighbours(cellIndex int, readOnlyCurrentState []int) in
 }
 
 func resetBoard(c echo.Context, ws *websocket.Conn) {
-	initialState := getGlider()
+	initialState := getBlinker()
 	setGameData(initialState)
 	initialBoard := drawBoard(initialState)
 
