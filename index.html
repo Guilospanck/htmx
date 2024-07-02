@@ -35,7 +35,7 @@
     <script id="htmx_pls_here"></script>
     <script id="handle_canvas_click">
       var canvas = document.getElementById("game");
-      var ctx = canvas.getContext("2d");
+      var ctx = canvas.getContext("2d", { willReadFrequently: true });
 
       var canvasBoundingRect = canvas.getBoundingClientRect();
 
@@ -55,11 +55,16 @@
         const x = clickX - canvasX;
         const y = clickY - canvasY;
 
+        const getColor = () => {
+          const imageData = ctx.getImageData(x, y, 1, 1).data;
+          return imageData[0] === 255 ? "black" : "white";
+        };
+
         const cellX = Math.floor(x / CELL_SIZE);
         const cellY = Math.floor(y / CELL_SIZE);
 
         ctx.beginPath();
-        ctx.fillStyle = "white";
+        ctx.fillStyle = getColor();
         ctx.strokeRect(
           cellX * CELL_SIZE,
           cellY * CELL_SIZE,
