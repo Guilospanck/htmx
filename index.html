@@ -33,6 +33,7 @@
     <canvas id="game" width="800" height="800"></canvas>
 
     <script id="htmx_pls_here"></script>
+
     <script id="handle_canvas_click">
       var canvas = document.getElementById("game");
       var ctx = canvas.getContext("2d", { willReadFrequently: true });
@@ -49,6 +50,10 @@
       var NUMBER_OF_COLUMNS = 50;
 
       canvas.addEventListener("click", (event) => {
+        if (isItRunning) {
+          return;
+        }
+
         const clickX = event.x;
         const clickY = event.y;
 

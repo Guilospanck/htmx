@@ -50,6 +50,7 @@ func drawBoard(gameState []int) string {
 			ctx.strokeStyle = "white";
 
 			var data = %s
+			var isItRunning = %t
 
 			var i = 0;
 			var j = 0;
@@ -77,7 +78,7 @@ func drawBoard(gameState []int) string {
 				i++;
 			}
 		</script>
-	`, string(marshalledGameState))
+	`, string(marshalledGameState), isItRunning)
 
 	return response
 }
@@ -219,6 +220,14 @@ func calculateSleep() time.Duration {
 	return duration
 }
 
+func sendUpdatedData(newData chan string) {
+	updateCurrentGameState()
+	currentGameState := getCurrentStateData()
+	updatedData := drawBoard(currentGameState)
+
+	newData <- updatedData
+}
+
 func runConwaysRulesAndReturnState(c echo.Context, stop chan int, newData chan string) {
 	for {
 		select {
@@ -227,13 +236,10 @@ func runConwaysRulesAndReturnState(c echo.Context, stop chan int, newData chan s
 			// 'return' breaks from all
 			c.Logger().Warn("Stopping...")
 			isItRunning = false
+			sendUpdatedData(newData)
 			return
 		default:
-			updateCurrentGameState()
-			currentGameState := getCurrentStateData()
-			updatedData := drawBoard(currentGameState)
-
-			newData <- updatedData
+			sendUpdatedData(newData)
 			time.Sleep(calculateSleep())
 		}
 	}
