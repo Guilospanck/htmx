@@ -28,6 +28,18 @@
       />
       <label for="speed">Speed</label>
     </div>
+    <label for="pattern">Choose a pattern:</label>
+    <select
+      name="pattern"
+      id="pattern"
+      hx-post="http://localhost:4444/pattern"
+      hx-swap="none"
+    >
+      <option value="glider">Glider</option>
+      <option value="blinker">Blinker</option>
+      <option value="gosper_gun">Gosper Glider Gun</option>
+      <option value="cross">Cross sign</option>
+    </select>
 
     <div hx-ext="ws" ws-connect="ws://localhost:4444/ws"></div>
     <canvas id="game" width="800" height="800"></canvas>

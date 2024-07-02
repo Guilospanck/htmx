@@ -354,5 +354,32 @@ func main() {
 		return c.NoContent(http.StatusOK)
 	})
 
+	e.POST("/pattern", func(c echo.Context) (err error) {
+		type RequestFormData struct {
+			Pattern string `json:"pattern" form:"pattern" query:"pattern"`
+		}
+
+		u := new(RequestFormData)
+		if err = c.Bind(u); err != nil {
+			return err
+		}
+
+		var newPattern []int
+
+		switch u.Pattern {
+		case "blinker":
+			newPattern = getBlinker()
+		case "glider":
+			newPattern = getGlider()
+		default:
+			newPattern = getBlinker()
+		}
+
+		setGameData(newPattern)
+		sendUpdatedData(newData)
+
+		return c.NoContent(http.StatusOK)
+	})
+
 	e.Logger.Fatal(e.Start(":4444"))
 }

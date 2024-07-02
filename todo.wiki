@@ -1,10 +1,14 @@
 Bugs:
 - [x] The reset does not work after a `stop`
 - [x] It is using the cell state from the previous rendered state;
-- [ ] Adjust the width and height of Canvas.
+- [ ] Adjust the width and height of Canvas;
+- [ ] Websocket looks like not working properly
 
 Features:
 - [x] Add possibility of changing the speed of which the game is going to be rendered;
 - [x] Add possibility of selecting the grids squares (cells) with a mouse, so we decide which are the alive or dead cells;
 - [x] Toggle cell live/dead;
 - [ ] Add possibility of starting the game with different pre-built models;
+
+Improvements:
+- [ ] Use variables that come from the backend
