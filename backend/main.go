@@ -57,11 +57,10 @@ func drawBoard(gameState []int) string {
 			for(const strIndex in data) {
 				let index = parseInt(strIndex);
 
-				if((index + 1) %% NUMBER_OF_COLUMNS === 0 && index !== 0){
+				if(index %% NUMBER_OF_COLUMNS === 0 && index !== 0){
 					// go down
 					i = 0;
 					j++;
-					continue;
 				}
 
 				let rowStep = i * CELL_SIZE;
