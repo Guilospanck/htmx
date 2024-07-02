@@ -334,6 +334,21 @@ func main() {
 
 		return c.NoContent(http.StatusOK)
 	})
+	e.POST("/update", func(c echo.Context) (err error) {
+		type UpdatedData struct {
+			Data []int `json:"data" form:"data" query:"data"`
+		}
+
+		u := new(UpdatedData)
+		if err = c.Bind(u); err != nil {
+			return err
+		}
+
+		data := u.Data
+		setGameData(data)
+
+		return c.NoContent(http.StatusOK)
+	})
 
 	e.Logger.Fatal(e.Start(":4444"))
 }

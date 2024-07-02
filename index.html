@@ -31,6 +31,12 @@
 
     <div hx-ext="ws" ws-connect="ws://localhost:4444/ws"></div>
     <canvas id="game" width="800" height="800"></canvas>
+    <button
+      id="update_button"
+      style="display: none"
+      hx-post="http://localhost:4444/update"
+      hx-vars="data:data"
+    ></button>
 
     <script id="htmx_pls_here"></script>
 
@@ -61,15 +67,23 @@
         const y = clickY - canvasY;
 
         const getColor = () => {
+          // getImageData gives us the RGBA value of the position
           const imageData = ctx.getImageData(x, y, 1, 1).data;
+          // If pixel is white, then I want to `paint it black`
           return imageData[0] === 255 ? "black" : "white";
         };
+
+        const color = getColor();
 
         const cellX = Math.floor(x / CELL_SIZE);
         const cellY = Math.floor(y / CELL_SIZE);
 
+        // Change the `data` array that we are receiving from the backend
+        const clickedIndex = cellY * NUMBER_OF_ROWS + cellX;
+        data[clickedIndex] = color === "white" ? 1 : 0;
+
         ctx.beginPath();
-        ctx.fillStyle = getColor();
+        ctx.fillStyle = color;
         ctx.strokeRect(
           cellX * CELL_SIZE,
           cellY * CELL_SIZE,
@@ -83,6 +97,8 @@
           CELL_SIZE,
         );
         ctx.stroke();
+
+        document.getElementById("update_button").click();
       });
     </script>
   </body>
