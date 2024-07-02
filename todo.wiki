@@ -12,3 +12,4 @@ Features:
 
 Improvements:
 - [ ] Use variables that come from the backend
+- [ ] Add some restrictions on the application (example: do not allow to choose a pattern if the game is running)

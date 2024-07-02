@@ -124,6 +124,24 @@ func getGlider() []int {
 	return state
 }
 
+func getCrossSign() []int {
+	state := getInitialGameState()
+
+	halfRow := BOARD_COLUMNS / 2
+
+	for i := halfRow; i <= GAME_BOARD_SIZE-halfRow; i += BOARD_COLUMNS {
+		state[i] = 1
+	}
+
+	initialRange := GAME_BOARD_SIZE / 2
+
+	for j := initialRange; j <= initialRange+BOARD_COLUMNS-1; j++ {
+		state[j] = 1
+	}
+
+	return state
+}
+
 func getNumberOfAliveNeighbours(cellIndex int, readOnlyCurrentState []int) int {
 	topIndex := cellIndex - BOARD_COLUMNS
 	bottomIndex := cellIndex + BOARD_COLUMNS
@@ -371,6 +389,8 @@ func main() {
 			newPattern = getBlinker()
 		case "glider":
 			newPattern = getGlider()
+		case "cross":
+			newPattern = getCrossSign()
 		default:
 			newPattern = getBlinker()
 		}
