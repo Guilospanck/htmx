@@ -35,7 +35,7 @@
       id="update_button"
       style="display: none"
       hx-post="http://localhost:4444/update"
-      hx-vars="data:data"
+      hx-vals="js:{index: clickedIndex, value: clickedNewValue}"
     ></button>
 
     <script id="htmx_pls_here"></script>
@@ -54,6 +54,9 @@
       var CELL_SIZE = 15;
       var NUMBER_OF_ROWS = 50;
       var NUMBER_OF_COLUMNS = 50;
+
+      var clickedIndex = null;
+      var clickedNewValue = null;
 
       canvas.addEventListener("click", (event) => {
         if (isItRunning) {
@@ -79,8 +82,8 @@
         const cellY = Math.floor(y / CELL_SIZE);
 
         // Change the `data` array that we are receiving from the backend
-        const clickedIndex = cellY * NUMBER_OF_ROWS + cellX;
-        data[clickedIndex] = color === "white" ? 1 : 0;
+        clickedIndex = cellY * NUMBER_OF_ROWS + cellX;
+        clickedNewValue = color === "white" ? 1 : 0;
 
         ctx.beginPath();
         ctx.fillStyle = color;

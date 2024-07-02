@@ -336,7 +336,8 @@ func main() {
 	})
 	e.POST("/update", func(c echo.Context) (err error) {
 		type UpdatedData struct {
-			Data []int `json:"data" form:"data" query:"data"`
+			Index int `json:"index" form:"index" query:"index"`
+			Value int `json:"value" form:"value" query:"value"`
 		}
 
 		u := new(UpdatedData)
@@ -344,8 +345,11 @@ func main() {
 			return err
 		}
 
-		data := u.Data
-		setGameData(data)
+		index := u.Index
+		value := u.Value
+		oldData := getCurrentStateData()
+		oldData[index] = value
+		setGameData(oldData)
 
 		return c.NoContent(http.StatusOK)
 	})
