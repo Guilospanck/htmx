@@ -24,7 +24,7 @@ var (
 	upgrader            = websocket.Upgrader{}
 	mutCurrentGameState = make([]int, GAME_BOARD_SIZE)
 	mu                  sync.Mutex
-	isItRunning         bool = false
+	isItRunning         atomic.Bool
 	gameSpeed           atomic.Uint32
 )
 
@@ -79,7 +79,7 @@ func drawBoard(gameState []int) string {
 				i++;
 			}
 		</script>
-	`, string(marshalledGameState), isItRunning)
+	`, string(marshalledGameState), isItRunning.Load())
 
 	return response
 }
@@ -252,7 +252,7 @@ func runConwaysRulesAndReturnState(c echo.Context, stop chan int, newData chan s
 			// 'break' only breaks from the innermost loop (in this case would be select)
 			// 'return' breaks from all
 			c.Logger().Warn("Stopping...")
-			isItRunning = false
+			isItRunning.Store(false)
 			sendUpdatedData(newData)
 			return
 		default:
@@ -285,12 +285,12 @@ func ws(c echo.Context, start <-chan int, stop chan int, reset <-chan int, newDa
 				c.Logger().Error(err)
 			}
 		case <-start:
-			isItRunning = true
+			isItRunning.Store(true)
 			c.Logger().Warn("Starting...")
 			go runConwaysRulesAndReturnState(c, stop, newData)
 		case <-reset:
 			c.Logger().Warn("Resetting...")
-			if isItRunning {
+			if isItRunning.Load() {
 				stop <- 1
 			}
 			resetBoard(c, ws)
