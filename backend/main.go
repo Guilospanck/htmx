@@ -42,6 +42,7 @@ func drawBoard(gameState []int) string {
 	response := fmt.Sprintf(`
 		<script id="htmx_pls_here" hx-swap-oob="outerHTML">
 			var NUMBER_OF_COLUMNS = 50;
+			var NUMBER_OF_ROWS = 50;
 			var CELL_SIZE = 15;
 			var canvas = document.getElementById("game");
 			var ctx = canvas.getContext("2d");
@@ -128,13 +129,11 @@ func getCrossSign() []int {
 	state := getInitialGameState()
 
 	halfRow := BOARD_COLUMNS / 2
-
 	for i := halfRow; i <= GAME_BOARD_SIZE-halfRow; i += BOARD_COLUMNS {
 		state[i] = 1
 	}
 
 	initialRange := GAME_BOARD_SIZE / 2
-
 	for j := initialRange; j <= initialRange+BOARD_COLUMNS-1; j++ {
 		state[j] = 1
 	}
