@@ -48,7 +48,7 @@ func drawBoard(gameState []int) string {
 			var ctx = canvas.getContext("2d");
 
 			ctx.lineWidth = "0.1";
-			ctx.strokeStyle = "white";
+			ctx.strokeStyle = "red";
 
 			var data = %s
 			var isItRunning = %t
@@ -68,7 +68,7 @@ func drawBoard(gameState []int) string {
 				let rowStep = i * CELL_SIZE;
 				let columnStep = j * CELL_SIZE;
 
-				let color = data[index] === 1 ? 'white' : 'black';
+				let color = data[index] === 1 ? 'green' : 'black';
 
 				ctx.beginPath();
 				ctx.fillStyle = color;
@@ -256,6 +256,9 @@ func runConwaysRulesAndReturnState(c echo.Context, stop chan int, newData chan s
 			sendUpdatedData(newData)
 			return
 		default:
+			if !isItRunning.Load() {
+				continue
+			}
 			sendUpdatedData(newData)
 			time.Sleep(calculateSleep())
 		}
@@ -291,7 +294,7 @@ func ws(c echo.Context, start <-chan int, stop chan int, reset <-chan int, newDa
 		case <-reset:
 			c.Logger().Warn("Resetting...")
 			if isItRunning.Load() {
-				stop <- 1
+				isItRunning.Store(false)
 			}
 			resetBoard(c, ws)
 		}
