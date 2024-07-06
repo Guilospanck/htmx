@@ -28,14 +28,6 @@ var (
 	gameSpeed           atomic.Uint32
 )
 
-func getColorBasedOnCellAliveOrDead(state int) string {
-	if state == 0 {
-		return "black"
-	} else {
-		return "white"
-	}
-}
-
 func drawBoard(gameState []int) string {
 	marshalledGameState, _ := json.Marshal(gameState)
 
@@ -292,12 +284,16 @@ func calculateSleep() time.Duration {
 	return duration
 }
 
-func sendUpdatedData(newData chan string) {
-	updateCurrentGameState()
+func sendCurrentData(newData chan string) {
 	currentGameState := getCurrentStateData()
 	updatedData := drawBoard(currentGameState)
 
 	newData <- updatedData
+}
+
+func sendUpdatedData(newData chan string) {
+	updateCurrentGameState()
+	sendCurrentData(newData)
 }
 
 func runConwaysRulesAndReturnState(newData chan string) {
@@ -445,7 +441,7 @@ func main() {
 		}
 
 		setGameData(newPattern)
-		sendUpdatedData(newData)
+		sendCurrentData(newData)
 
 		return c.NoContent(http.StatusOK)
 	})
