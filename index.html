@@ -13,7 +13,7 @@
       Start
     </button>
     <button hx-get="http://localhost:4444/stop" hx-trigger="click">Stop</button>
-    <button hx-get="http://localhost:4444/reset" hx-trigger="click">
+    <button hx-get="http://localhost:4444/reset" hx-trigger="click" id="reset">
       Reset
     </button>
     <div>
@@ -51,6 +51,14 @@
     ></button>
 
     <script id="htmx_pls_here"></script>
+
+    <script id="handleReset">
+      const resetElement = document.getElementById("reset");
+      const selectPatternElement = document.getElementById("pattern");
+      resetElement.addEventListener("click", () => {
+        selectPatternElement.value = "glider";
+      });
+    </script>
 
     <script id="handle_canvas_click">
       var canvas = document.getElementById("game");
