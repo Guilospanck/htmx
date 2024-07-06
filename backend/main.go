@@ -245,28 +245,18 @@ func sendUpdatedData(newData chan string) {
 	newData <- updatedData
 }
 
-func runConwaysRulesAndReturnState(c echo.Context, stop chan int, newData chan string) {
+func runConwaysRulesAndReturnState(newData chan string) {
 	for {
-		select {
-		case <-stop:
-			// 'break' only breaks from the innermost loop (in this case would be select)
-			// 'return' breaks from all
-			c.Logger().Warn("Stopping...")
-			isItRunning.Store(false)
-			sendUpdatedData(newData)
+		sendUpdatedData(newData)
+		if !isItRunning.Load() {
 			return
-		default:
-			if !isItRunning.Load() {
-				continue
-			}
-			sendUpdatedData(newData)
-			time.Sleep(calculateSleep())
 		}
+		time.Sleep(calculateSleep())
 	}
 }
 
 // To test via CLI: wscat -H "Origin: http://localhost:4444" -c ws://localhost:4444/ws
-func ws(c echo.Context, start <-chan int, stop chan int, reset <-chan int, newData chan string) error {
+func ws(c echo.Context, start <-chan int, reset <-chan int, newData chan string) error {
 	upgrader.CheckOrigin = func(r *http.Request) bool { return true }
 	ws, err := upgrader.Upgrade(c.Response(), c.Request(), nil)
 	if err != nil {
@@ -281,22 +271,20 @@ func ws(c echo.Context, start <-chan int, stop chan int, reset <-chan int, newDa
 
 	for {
 		select {
+		case <-start:
+			c.Logger().Warn("Starting...")
+			isItRunning.Store(true)
+			go runConwaysRulesAndReturnState(newData)
+		case <-reset:
+			c.Logger().Warn("Resetting...")
+			isItRunning.Store(false)
+			resetBoard(c, ws)
 		case x := <-newData:
 			c.Logger().Warn("Sending new data...")
 			err := ws.WriteMessage(websocket.TextMessage, []byte(x))
 			if err != nil {
 				c.Logger().Error(err)
 			}
-		case <-start:
-			isItRunning.Store(true)
-			c.Logger().Warn("Starting...")
-			go runConwaysRulesAndReturnState(c, stop, newData)
-		case <-reset:
-			c.Logger().Warn("Resetting...")
-			if isItRunning.Load() {
-				isItRunning.Store(false)
-			}
-			resetBoard(c, ws)
 		}
 	}
 
@@ -307,24 +295,26 @@ func main() {
 
 	// Middleware
 	e.Use(middleware.Logger())
-	e.Use(middleware.Recover())
+	// e.Use(middleware.Recover())
 	e.Use(middleware.CORS())
 
 	e.Logger.SetLevel(log.INFO)
 
 	start := make(chan int)
-	stop := make(chan int)
 	reset := make(chan int)
 	newData := make(chan string)
 
 	gameSpeed.Store(1)
 
 	e.GET("/start", func(c echo.Context) error {
+		if isItRunning.Load() {
+			return c.NoContent(http.StatusNoContent)
+		}
 		start <- 1
 		return c.NoContent(http.StatusNoContent)
 	})
 	e.GET("/stop", func(c echo.Context) error {
-		stop <- 1
+		isItRunning.Store(false)
 		return c.NoContent(http.StatusNoContent)
 	})
 	e.GET("/reset", func(c echo.Context) error {
@@ -332,7 +322,7 @@ func main() {
 		return c.NoContent(http.StatusNoContent)
 	})
 	e.GET("/ws", func(c echo.Context) error {
-		return ws(c, start, stop, reset, newData)
+		return ws(c, start, reset, newData)
 	})
 	e.POST("/speed", func(c echo.Context) (err error) {
 		type GameSpeed struct {
