@@ -48,10 +48,10 @@ func drawBoard(gameState []int) string {
 			var ctx = canvas.getContext("2d");
 
 			ctx.lineWidth = "0.1";
-			ctx.strokeStyle = "red";
 
 			var data = %s
 			var isItRunning = %t
+			var CELL_COLOR = 'green';
 
 			var i = 0;
 			var j = 0;
@@ -68,7 +68,7 @@ func drawBoard(gameState []int) string {
 				let rowStep = i * CELL_SIZE;
 				let columnStep = j * CELL_SIZE;
 
-				let color = data[index] === 1 ? 'green' : 'black';
+				let color = data[index] === 1 ? CELL_COLOR : 'black';
 
 				ctx.beginPath();
 				ctx.fillStyle = color;

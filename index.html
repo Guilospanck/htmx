@@ -84,7 +84,7 @@
           const isPixelBlack =
             imageData[0] === 0 && imageData[1] === 0 && imageData[2] === 0;
 
-          return isPixelBlack ? "green" : "black";
+          return isPixelBlack ? CELL_COLOR : "black";
         };
 
         const color = getColor();
@@ -94,7 +94,7 @@
 
         // Change the `data` array that we are receiving from the backend
         clickedIndex = cellY * NUMBER_OF_ROWS + cellX;
-        clickedNewValue = color === "white" ? 1 : 0;
+        clickedNewValue = color === CELL_COLOR ? 1 : 0;
 
         ctx.beginPath();
         ctx.fillStyle = color;
