@@ -26,10 +26,12 @@ var (
 	mu                  sync.Mutex
 	isItRunning         atomic.Bool
 	gameSpeed           atomic.Uint32
+	iterations          atomic.Uint64
 )
 
 func drawBoard(gameState []int) string {
 	marshalledGameState, _ := json.Marshal(gameState)
+	iterationsString := fmt.Sprintf("Iteration %d", iterations.Load())
 
 	response := fmt.Sprintf(`
 		<script id="htmx_pls_here" hx-swap-oob="outerHTML">
@@ -78,12 +80,21 @@ func drawBoard(gameState []int) string {
 				ctx.fillStyle = color;
 				ctx.strokeRect(rowStep, columnStep, CELL_SIZE, CELL_SIZE);
 				ctx.fillRect(rowStep, columnStep, CELL_SIZE, CELL_SIZE);
-				ctx.stroke();
+				ctx.stroke(); 
 
 				i++;
 			}
+			var iteration = "%s"
+		    var writeIteration = () => {
+		    	ctx.fillStyle = "red";
+			    ctx.font = "20px Arial";
+				ctx.fillText(iteration, 500, 17);
+		    };
+
+			writeIteration();
+
 		</script>
-	`, string(marshalledGameState), isItRunning.Load())
+	`, string(marshalledGameState), isItRunning.Load(), iterationsString)
 
 	return response
 }
@@ -266,6 +277,7 @@ func updateCurrentGameState() {
 	}
 
 	setGameData(mutableCopy)
+	iterations.Add(1)
 }
 
 // f(x) = -999/99000*(slider - 1) + 1
@@ -329,6 +341,7 @@ func ws(c echo.Context, start <-chan int, reset <-chan int, newData chan string)
 		case <-reset:
 			c.Logger().Warn("Resetting...")
 			isItRunning.Store(false)
+			iterations.Store(0)
 			resetBoard(c, ws)
 		case x := <-newData:
 			c.Logger().Warn("Sending new data...")
