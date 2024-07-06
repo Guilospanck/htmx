@@ -9,7 +9,8 @@ Features:
 - [x] Add possibility of selecting the grids squares (cells) with a mouse, so we decide which are the alive or dead cells;
 - [x] Toggle cell live/dead;
 - [x] Add possibility of starting the game with different pre-built models;
-- [ ] Add gosper glider gun
+- [x] Add gosper glider gun 
+- [ ] Add iteration counter
 
 Improvements:
 - [x] Use variables that come from the backend

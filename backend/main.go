@@ -68,7 +68,19 @@ func drawBoard(gameState []int) string {
 				let rowStep = i * CELL_SIZE;
 				let columnStep = j * CELL_SIZE;
 
-				let color = data[index] === 1 ? CELL_COLOR : 'black';
+				const getColor = () => {
+					if(data[index] === 1){
+						return CELL_COLOR
+					} else if(data[index] === 2){
+						return 'red'
+					} else if(data[index] === 3){
+						return 'blue'
+					} else {
+						return 'black'
+					}
+				}
+
+				let color = getColor()
 
 				ctx.beginPath();
 				ctx.fillStyle = color;
