@@ -141,6 +141,49 @@ func getCrossSign() []int {
 	return state
 }
 
+func getGosperGliderGun() []int {
+	state := getInitialGameState()
+
+	state[875] = 1
+	state[923] = 1
+	state[925] = 1
+	state[963] = 1
+	state[964] = 1
+	state[971] = 1
+	state[972] = 1
+	state[985] = 1
+	state[986] = 1
+	state[1012] = 1
+	state[1016] = 1
+	state[1021] = 1
+	state[1022] = 1
+	state[1035] = 1
+	state[1036] = 1
+	state[1051] = 1
+	state[1052] = 1
+	state[1061] = 1
+	state[1067] = 1
+	state[1071] = 1
+	state[1072] = 1
+	state[1101] = 1
+	state[1102] = 1
+	state[1111] = 1
+	state[1115] = 1
+	state[1117] = 1
+	state[1118] = 1
+	state[1123] = 1
+	state[1125] = 1
+	state[1161] = 1
+	state[1167] = 1
+	state[1175] = 1
+	state[1212] = 1
+	state[1216] = 1
+	state[1263] = 1
+	state[1264] = 1
+
+	return state
+}
+
 func getNumberOfAliveNeighbours(cellIndex int, readOnlyCurrentState []int) int {
 	topIndex := cellIndex - BOARD_COLUMNS
 	bottomIndex := cellIndex + BOARD_COLUMNS
@@ -383,6 +426,8 @@ func main() {
 			newPattern = getGlider()
 		case "cross":
 			newPattern = getCrossSign()
+		case "gosper_gun":
+			newPattern = getGosperGliderGun()
 		default:
 			newPattern = getBlinker()
 		}
