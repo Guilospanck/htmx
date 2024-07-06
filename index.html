@@ -80,8 +80,11 @@
         const getColor = () => {
           // getImageData gives us the RGBA value of the position
           const imageData = ctx.getImageData(x, y, 1, 1).data;
-          // If pixel is white, then I want to `paint it black`
-          return imageData[0] === 255 ? "black" : "white";
+
+          const isPixelBlack =
+            imageData[0] === 0 && imageData[1] === 0 && imageData[2] === 0;
+
+          return isPixelBlack ? "green" : "black";
         };
 
         const color = getColor();
