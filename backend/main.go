@@ -327,13 +327,33 @@ func ws(c echo.Context, start <-chan int, reset <-chan int, newData chan string)
 		return err
 	}
 
-	// defers are executed in LIFO fashion
-	defer ws.Close()
+	done := make(chan struct{})
+	go writer(c, ws, done, start, reset, newData)
+	go reader(ws, done)
 
+	return nil
+}
+
+func reader(conn *websocket.Conn, done chan struct{}) {
+	defer conn.Close()
+	defer close(done)
+	for {
+		_, _, err := conn.ReadMessage()
+		if err != nil {
+			return
+		}
+	}
+}
+
+func writer(c echo.Context, ws *websocket.Conn, done chan struct{}, start <-chan int, reset <-chan int, newData chan string) {
+	defer ws.Close()
 	resetBoard(c, ws)
 
 	for {
 		select {
+		case <-done:
+			// the reader is done, so return
+			return
 		case <-start:
 			c.Logger().Debug("Starting...")
 			isItRunning.Store(true)
@@ -351,7 +371,6 @@ func ws(c echo.Context, start <-chan int, reset <-chan int, newData chan string)
 			}
 		}
 	}
-
 }
 
 func main() {

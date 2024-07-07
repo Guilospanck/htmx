@@ -2,7 +2,7 @@ Bugs:
 - [x] The reset does not work after a `stop`
 - [x] It is using the cell state from the previous rendered state;
 - [x] Adjust the width and height of Canvas;
-- [ ] Websocket looks like not working properly(what probably is happening is that whenever I refresh the page the WS is not being reset and therefore we find ourselves having broken pipe errors)
+- [x] Websocket looks like not working properly(what probably is happening is that whenever I refresh the page the WS is not being reset and therefore we find ourselves having broken pipe errors)
 
 Features:
 - [x] Add possibility of changing the speed of which the game is going to be rendered;
@@ -17,3 +17,4 @@ Improvements:
 - [x] Add some restrictions on the application (example: do not allow to choose a pattern if the game is running)
 - [x] Reset state of pattern components
 - [x] Remove WARN logger (change to DEBUG)
+- [ ] Reset the iteration counter whenever we change patterns 
