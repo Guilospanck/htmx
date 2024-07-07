@@ -310,10 +310,10 @@ func sendUpdatedData(newData chan string) {
 
 func runConwaysRulesAndReturnState(newData chan string) {
 	for {
-		sendUpdatedData(newData)
 		if !isItRunning.Load() {
 			return
 		}
+		sendUpdatedData(newData)
 		time.Sleep(calculateSleep())
 	}
 }
