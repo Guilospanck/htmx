@@ -247,7 +247,7 @@ func resetBoard(c echo.Context, ws *websocket.Conn) {
 	setGameData(initialState)
 	initialBoard := drawBoard(initialState)
 
-	c.Logger().Warn("Sending new data from reset...")
+	c.Logger().Debug("Sending new data from reset...")
 	err := ws.WriteMessage(websocket.TextMessage, []byte(initialBoard))
 	if err != nil {
 		c.Logger().Error(err)
@@ -335,16 +335,16 @@ func ws(c echo.Context, start <-chan int, reset <-chan int, newData chan string)
 	for {
 		select {
 		case <-start:
-			c.Logger().Warn("Starting...")
+			c.Logger().Debug("Starting...")
 			isItRunning.Store(true)
 			go runConwaysRulesAndReturnState(newData)
 		case <-reset:
-			c.Logger().Warn("Resetting...")
+			c.Logger().Debug("Resetting...")
 			isItRunning.Store(false)
 			iterations.Store(0)
 			resetBoard(c, ws)
 		case x := <-newData:
-			c.Logger().Warn("Sending new data...")
+			c.Logger().Debug("Sending new data...")
 			err := ws.WriteMessage(websocket.TextMessage, []byte(x))
 			if err != nil {
 				c.Logger().Error(err)

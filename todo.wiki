@@ -16,4 +16,4 @@ Improvements:
 - [x] Use variables that come from the backend
 - [x] Add some restrictions on the application (example: do not allow to choose a pattern if the game is running)
 - [x] Reset state of pattern components
-- [ ] Remove WARN logger (change to DEBUG)
+- [x] Remove WARN logger (change to DEBUG)
