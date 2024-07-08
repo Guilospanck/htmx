@@ -13,6 +13,7 @@ Features:
 - [x] Add possibility of starting the game with different pre-built models;
 - [x] Add gosper glider gun 
 - [x] Add iteration counter
+- [ ] Add Dockerfile/Docker compose and check GitHub pages to maybe host it 
 
 Improvements:
 - [x] Use variables that come from the backend

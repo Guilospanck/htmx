@@ -474,6 +474,7 @@ func main() {
 
 		setGameData(newPattern)
 		sendCurrentData(newData)
+		iterations.Store(0)
 
 		return c.NoContent(http.StatusOK)
 	})
