@@ -405,6 +405,8 @@ func main() {
 		return c.NoContent(http.StatusNoContent)
 	})
 	e.GET("/ws", func(c echo.Context) error {
+		gameSpeed.Store(1)
+		iterations.Store(0)
 		return ws(c, start, reset, newData)
 	})
 	e.POST("/speed", func(c echo.Context) (err error) {

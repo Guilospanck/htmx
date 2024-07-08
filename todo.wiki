@@ -4,7 +4,7 @@ Bugs:
 - [x] Adjust the width and height of Canvas;
 - [x] Websocket looks like not working properly(what probably is happening is that whenever I refresh the page the WS is not being reset and therefore we find ourselves having broken pipe errors)
 - [x] When hitting reset key, if the game is running, it will go to iteration 1 and not 0
-- [ ] When refresh button is pressed, if I had a certain speed, it is going to maintain the same speed, but the input range is not going to be updated
+- [x] When refresh button is pressed, if I had a certain speed, it is going to maintain the same speed, but the input range is not going to be updated
 
 Features:
 - [x] Add possibility of changing the speed of which the game is going to be rendered;
@@ -20,4 +20,4 @@ Improvements:
 - [x] Add some restrictions on the application (example: do not allow to choose a pattern if the game is running)
 - [x] Reset state of pattern components
 - [x] Remove WARN logger (change to DEBUG)
-- [ ] Reset the iteration counter whenever we change patterns 
+- [x] Reset the iteration counter whenever we change patterns 
